@@ -1,0 +1,10 @@
+# id            Overpass-Namensfilter (fetch.sh)      Platzfilter (osm2map.py)
+bruchsal        Bruchsal                              Bruchsal
+lobenfeld       Lobenfeld                             Lobenfeld
+pforzheim       Karlsh                                Karlshäuser
+batzenhof       Batzenhof                             Batzenhof
+stleonrot       Leon                                  St\. Leon-Rot
+dreihof         Dreihof                               Dreihof
+westpfalz       Schwarzbachtal|Westpfalz              Schwarzbachtal|Westpfalz
+sinsheim        Buchenauerhof|Sinsheim                Buchenauer
+hohenhardt      Hohenhardt                            Hohenhardt
