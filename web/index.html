@@ -1377,7 +1377,7 @@ async function initStore() {
   try { handle = window.claude?.use ? await claude.use("db") : null; } catch (e) { handle = null; }
   if (handle) {
     db = handle; mode = "db";
-    $("#mode").textContent = "Gespeichert in deinem Claude-Konto";
+    $("#mode").textContent = window.BOGEY_HOSTED ? "Gemeinsam gespeichert" : "Gespeichert in deinem Claude-Konto";
     let pending = new Set(COLLS);
     COLLS.forEach(c => db.collection(c).onSnapshot(snap => {
       S[c] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1498,7 +1498,7 @@ function editorHTML() {
       <div style="display:grid;gap:8px"><h3>Spieler</h3><div class="chips">${chips}</div></div>
       ${hcps ? `<div class="fields">${hcps}</div><p class="hint">Handicap-Index am Spieltag – daraus werden Spielvorgabe und Stableford berechnet.</p>` : ""}
     </section>
-    <section class="panel"><h3>Scorekarte einlesen</h3><div id="scanbox"></div></section>
+    ${window.BOGEY_HOSTED ? "" : `<section class="panel"><h3>Scorekarte einlesen</h3><div id="scanbox"></div></section>`}
     <section class="panel">
       <h3>Scorekarte</h3>
       ${c ? (d.entries.length ? `<div class="card-wrap">${cardTable(d, c)}</div>
@@ -1860,7 +1860,7 @@ function playersHTML() {
     ${f.id ? (v => `<p class="hint">Virtuelles Handicap: <b>${v.hi != null ? fmt1(v.hi) : "noch keins"}</b> – berechnet aus ${v.count} auswertbaren Runde${v.count === 1 ? "" : "n"}${v.hi != null ? "" : ", ab 3 Runden verfügbar"}. Es ändert sich automatisch mit jeder Runde, das offizielle bleibt wie eingetragen.</p>`)(virtualHI(f.id)) : ""}
     <div class="row">${f.id ? `<button class="btn danger" data-act="del-player">Löschen</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-act="cancel-player">Abbrechen</button><button class="btn primary" data-act="save-player">Sichern</button></div></section>`;
   const list = [...S.players].sort((a, b) => (!!a.hidden - !!b.hidden) || a.name.localeCompare(b.name, "de"));
-  if (!list.length && !f) return h + `<div class="panel empty"><h3>Noch keine Spieler</h3><p class="hint">Lege alle an, deren Runden du verfolgen möchtest – mit aktuellem Handicap-Index.</p><button class="btn primary" data-act="new-player">Ersten Spieler anlegen</button></div>`;
+  if (!list.length && !f) return h + `<div class="panel empty"><h3>Noch keine Spieler</h3><p class="hint">Lege alle an, deren Runden du verfolgen möchtest – mit aktuellem Handicap-Index.</p><button class="btn primary" data-act="new-player">Ersten Spieler anlegen</button></div>` + backupHTML();
   return h + `<section class="panel"><div class="plist">${list.map(p => {
     const n = S.rounds.filter(r => (r.entries || []).some(e => e.playerId === p.id)).length;
     return `<div class="pitem" ${p.hidden ? 'style="opacity:.6"' : ""}>${avatar(p, 36)}<span class="n">${esc(p.name)}${p.hidden ? ` <span class="hcp-badge" style="font-size:.75rem">ausgeblendet</span>` : ""}</span><span class="hint">${n} Runde${n === 1 ? "" : "n"}</span><span class="hcp-badge">HCP ${fmt1(+p.hcp)}</span>${(v => `<span class="hcp-badge virt" title="Virtuelles Handicap aus ${v.count} Runden">virt. ${v.hi != null ? fmt1(v.hi) : v.count + "/3"}</span>`)(virtualHI(p.id))}<button class="btn ghost" data-act="edit-player" data-id="${p.id}">Bearbeiten</button></div>`;
@@ -2166,20 +2166,30 @@ async function saveRoundCard(d) {
 function backupHTML() {
   const n = S.rounds.length;
   return `<section class="panel" id="backup"><h3>Daten-Backup</h3>
-    <p class="hint">Sichert alle Spieler, Plätze, Runden und Platzkarten in einer Datei (JSON). Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt – gelöscht wird nichts. Spieler- und Luftbilder bleiben in der App gespeichert und sind nicht in der Datei.</p>
+    <p class="hint">Sichert alle Spieler, Plätze, Runden und Platzkarten in einer Datei (JSON). Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt – gelöscht wird nichts. Spieler- und Luftbilder sind mit in der Datei.</p>
     <div class="row"><button class="btn primary" data-act="backup-export">Backup herunterladen</button><label class="btn" for="backup-file">Backup einspielen …</label><input type="file" id="backup-file" accept="application/json,.json" hidden></div>
     <p class="hint">${S.players.length} Spieler · ${S.courses.length} Plätze · ${n} Runde${n === 1 ? "" : "n"} · ${Object.keys(MAPS).length} Platzkarten</p>
     <div id="backup-status"></div></section>`;
 }
-function backupData() {
+// Bilder (Spieler, Luftbilder) als data:-URLs mitsichern, damit ein Umzug auf einen anderen Server sie mitnimmt
+async function blobDataUrl(id) {
+  try { const b = await (await fetch(`/_blob/${id}`)).blob(); if (!b.size || !/^image\//.test(b.type)) return null;
+    return await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = no; fr.readAsDataURL(b); }); }
+  catch (e) { return null; }
+}
+async function backupData() {
   const strip = o => { const { uploading, ...r } = o; return r; };
   const maps = Object.fromEntries(Object.entries(MAPS).map(([k, m]) => [k, { json: JSON.stringify(m) }]));
-  return { app: "Bogey Club", kind: "backup", version: 1, exportedAt: new Date().toISOString(),
-    players: S.players.map(strip), courses: S.courses.map(strip), rounds: S.rounds.map(strip), coursemaps: maps };
+  const ids = [...new Set([...S.players, ...S.courses].map(x => x.photo).filter(Boolean))];
+  const images = {};
+  for (const id of ids) { const u = await blobDataUrl(id); if (u) images[id] = u; }
+  return { app: "Bogey Club", kind: "backup", version: 2, exportedAt: new Date().toISOString(),
+    players: S.players.map(strip), courses: S.courses.map(strip), rounds: S.rounds.map(strip), coursemaps: maps, images };
 }
 async function exportBackup() {
   const st = $("#backup-status"), say = t => st && (st.innerHTML = `<p class="hint">${esc(t)}</p>`);
-  const blob = new Blob([JSON.stringify(backupData(), null, 1)], { type: "application/json" });
+  say("Backup wird erstellt …");
+  const blob = new Blob([JSON.stringify(await backupData(), null, 1)], { type: "application/json" });
   const dl = window.claude?.use ? await claude.use("downloads").catch(() => null) : null;
   if (!dl) { say("Speichern ist in dieser Ansicht nicht möglich. Öffne die Seite in der Claude-App oder auf claude.ai."); return; }
   try { await dl.save({ filename: `Bogey-Club-Backup-${today()}.json`, data: blob }); say("Backup gespeichert."); }
@@ -2196,9 +2206,10 @@ async function readBackupFile(file) {
     const pick = (arr, coll) => { const list = arr.filter(ok); const have = new Set(S[coll].map(x => x.id)); return { list, neu: list.filter(x => !have.has(x.id)).length }; };
     const P = pick(d.players, "players"), C = pick(d.courses, "courses"), R = pick(d.rounds, "rounds");
     const M = Object.entries(d.coursemaps || {}).filter(([k, v]) => /^[A-Za-z0-9_\-.~:@+]{1,200}$/.test(k) && typeof v?.json === "string");
-    pendingBackup = { P: P.list, C: C.list, R: R.list, M };
+    const I = Object.entries(d.images || {}).filter(([k, v]) => typeof v === "string" && v.startsWith("data:image/"));
+    pendingBackup = { P: P.list, C: C.list, R: R.list, M, I };
     const line = (n, o, w) => `${o.list.length} ${n} (${o.neu} neu, ${o.list.length - o.neu} ${w})`;
-    st.innerHTML = `<p>Backup vom <b>${esc(d.exportedAt ? new Date(d.exportedAt).toLocaleString("de-DE") : "unbekannt")}</b>: ${line("Spieler", P, "überschreiben")}, ${line("Plätze", C, "überschreiben")}, ${line("Runden", R, "überschreiben")}, ${M.length} Platzkarten.</p>
+    st.innerHTML = `<p>Backup vom <b>${esc(d.exportedAt ? new Date(d.exportedAt).toLocaleString("de-DE") : "unbekannt")}</b>: ${line("Spieler", P, "überschreiben")}, ${line("Plätze", C, "überschreiben")}, ${line("Runden", R, "überschreiben")}, ${M.length} Platzkarten, ${I.length} Bilder.</p>
       <div class="row"><button class="btn primary" data-act="backup-apply">Jetzt einspielen</button><button class="btn ghost" data-act="backup-cancel">Abbrechen</button></div>`;
   } catch (e) { st.innerHTML = `<p class="hint">Diese Datei ist kein Bogey-Club-Backup.</p>`; }
 }
@@ -2207,6 +2218,15 @@ async function applyBackup() {
   st.innerHTML = `<p class="hint">Wird eingespielt …</p>`;
   let n = 0;
   try {
+    // Bilder: fehlen sie hier, neu hochladen und die IDs in Spielern und Plätzen umschreiben
+    const remap = {};
+    for (const [id, url] of b.I || []) {
+      if (!assetsApi) break;
+      try { const r = await fetch(`/_blob/${id}`, { method: "HEAD" }); if (r.ok) continue; } catch (e) { }
+      try { const res = await assetsApi.upload(await (await fetch(url)).blob()); remap[id] = res.id; } catch (e) { }
+    }
+    const fix = x => remap[x.photo] ? { ...x, photo: remap[x.photo] } : x;
+    b.P = b.P.map(fix); b.C = b.C.map(fix);
     for (const p of b.P) { await save("players", p); n++; }
     for (const c of b.C) { await save("courses", c); n++; }
     for (const r of b.R) { await save("rounds", r); n++; }

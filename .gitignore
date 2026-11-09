@@ -6,3 +6,6 @@ build/
 osm/*.json
 osm/*.json.tmp
 osm/log.txt
+node_modules/
+.wrangler/
+.dev.vars
