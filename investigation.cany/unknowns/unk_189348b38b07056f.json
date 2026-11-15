@@ -1,0 +1,13 @@
+{
+  "id": "unk_189348b38b07056f",
+  "revision": 1,
+  "question": "How well does the offline scan (Apple Vision) read the person's real, often handwritten scorecards?",
+  "severity": "medium",
+  "domain": "scan",
+  "status": "open",
+  "probes": [
+    "Scan a few real scorecard photos/PDFs in the Mac app and compare with the true values"
+  ],
+  "evidence_for": [],
+  "evidence_against": []
+}

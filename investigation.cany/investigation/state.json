@@ -1,0 +1,44 @@
+{
+  "revision": 5,
+  "brief": {
+    "question": "Build a native Mac app of Bogey Club that works fully without the Claude connection (local data storage, offline scorecard scan, saving files).",
+    "purpose": "The person wants to use their golf scorebook on the Mac independently of Claude.",
+    "targets": [
+      "web/index.html",
+      "server/runtime.js",
+      "ios/GolfScorebuch"
+    ],
+    "constraints": [
+      "Keep web/index.html, iOS app, Cloudflare hosting working unchanged",
+      "No Claude services at runtime"
+    ],
+    "done_when": "A .app builds from the repo, opens the Bogey Club UI, stores players/courses/rounds/photos on the Mac, saves PDFs/backups, imports backups, and reads scorecard photos with Apple's on-device text recognition."
+  },
+  "plan": [
+    {
+      "title": "Bogey-Club-Oberfläche für den Mac vorbereiten (ohne Claude, alles offline)",
+      "status": "done"
+    },
+    {
+      "title": "Speicher auf dem Mac für Spieler, Plätze, Runden und Bilder",
+      "status": "done"
+    },
+    {
+      "title": "Scorekarten-Foto offline mit der Mac-Texterkennung einlesen",
+      "status": "done"
+    },
+    {
+      "title": "Speichern von PDFs und Backups, Backup einspielen",
+      "status": "done",
+      "why": "Built; dialogs not click-tested"
+    },
+    {
+      "title": "Mac-App bauen und durchtesten",
+      "status": "done"
+    }
+  ],
+  "hypotheses": [],
+  "findings": [],
+  "handoff": "Text recognition now: BogeyScan/ (shared Swift package, Apple Vision + ScorecardParser) used by mac/ (path dependency) and ios/ (XCLocalSwiftPackageReference ../../BogeyScan in pbxproj; ScorecardScanner.scan now returns Result{rows, info} built from ScanResult). Hosted web: server/ocr.js (JS port of ScorecardParser + Tesseract.js 5.1.1 from jsDelivr, PSM 6 full pass, ROI re-read), loaded lazily by server/runtime.js as claude.use(\"sample\"); build.mjs copies it to public/. web/index.html: scan panel always shown, hint/busy text overridable via window.BOGEY_SCAN_HINT / BOGEY_SCAN_BUSY (set by mac/runtime.js and server/runtime.js). Verified: BogeyScan swift test 5/5, mac swift test 1/1, iOS simulator build succeeded (xcodebuild generic iOS Simulator, CODE_SIGNING_ALLOWED=NO), JS parser matches Swift test cases in node, Tesseract read test card correctly in Node and WebKit except \"11\"→\"1\". Keep ocr.js and ScorecardParser.swift in sync. Open: real handwritten cards; save dialogs not click-tested; iOS app not run on device.",
+  "updated": "2026-11-15T12:31:48Z"
+}

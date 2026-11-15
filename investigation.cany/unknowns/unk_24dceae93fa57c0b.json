@@ -1,0 +1,13 @@
+{
+  "id": "unk_24dceae93fa57c0b",
+  "revision": 1,
+  "question": "Do the save dialogs (PDF, round card, backup download) and the file pickers work when clicked by a person?",
+  "severity": "low",
+  "domain": "app",
+  "status": "open",
+  "probes": [
+    "Open the app, click 'Backup herunterladen' and 'Backup einspielen', save a PDF"
+  ],
+  "evidence_for": [],
+  "evidence_against": []
+}
