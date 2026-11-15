@@ -281,7 +281,7 @@ table.card thead tr > :first-child { background: var(--soft); }
 <div class="wrap">
   <header class="brand">
     <div class="logo">
-      <img src="bogey-club-logo.png" alt="Bogey-Club-Wappen" width="76" height="75">
+      <img src="bogey-club-logo.png" alt="Bogey-Club-Logo" width="76" height="76">
       <div>
         <h1>Bogey Club</h1>
         <p>Scorekarten sammeln, Saison auswerten, Bogeys feiern.</p>
@@ -1498,7 +1498,7 @@ function editorHTML() {
       <div style="display:grid;gap:8px"><h3>Spieler</h3><div class="chips">${chips}</div></div>
       ${hcps ? `<div class="fields">${hcps}</div><p class="hint">Handicap-Index am Spieltag – daraus werden Spielvorgabe und Stableford berechnet.</p>` : ""}
     </section>
-    ${window.BOGEY_HOSTED ? "" : `<section class="panel"><h3>Scorekarte einlesen</h3><div id="scanbox"></div></section>`}
+    <section class="panel"><h3>Scorekarte einlesen</h3><div id="scanbox"></div></section>
     <section class="panel">
       <h3>Scorekarte</h3>
       ${c ? (d.entries.length ? `<div class="card-wrap">${cardTable(d, c)}</div>
@@ -1591,7 +1591,7 @@ function renderScanBox() {
     return;
   }
   let h = `<div class="scanbox">
-    <p class="hint">Fotografiere die ausgefüllte Karte möglichst flach und vollständig oder wähle ein PDF, z. B. aus einer Golf-App. Claude liest Namen, Par, Lochvorgaben und Schläge aus – du prüfst danach alles in der Karte.</p>
+    <p class="hint">${esc(window.BOGEY_SCAN_HINT || "Fotografiere die ausgefüllte Karte möglichst flach und vollständig oder wähle ein PDF, z. B. aus einer Golf-App. Claude liest Namen, Par, Lochvorgaben und Schläge aus – du prüfst danach alles in der Karte.")}</p>
     <div class="row"><label class="btn primary" for="scan-camera">Foto aufnehmen</label>
     <label class="btn" for="scan-file">Bild aus Mediathek wählen</label>
     <input type="file" id="scan-camera" accept="image/*" capture="environment" hidden>
@@ -1599,7 +1599,7 @@ function renderScanBox() {
     <input type="file" id="scan-file" accept="image/*" hidden>
     <input type="file" id="scan-pdf" accept="application/pdf,.pdf" hidden></div>`;
   if (sc?.preview) h += `<img src="${sc.preview}" alt="Gescannte Scorekarte">`;
-  if (sc?.status === "busy") h += `<p class="status"><span class="spin"></span>${sc.step === "pdf" ? "PDF wird geöffnet …" : "Karte wird gelesen … das dauert meist 20–60 Sekunden."}</p>`;
+  if (sc?.status === "busy") h += `<p class="status"><span class="spin"></span>${sc.step === "pdf" ? "PDF wird geöffnet …" : esc(window.BOGEY_SCAN_BUSY || "Karte wird gelesen … das dauert meist 20–60 Sekunden.")}</p>`;
   if (sc?.status === "error") h += `<p class="status err">${esc(sc.msg)}</p>`;
   if (sc?.status === "done") h += mappingHTML(sc.result);
   box.innerHTML = h + `</div>`;

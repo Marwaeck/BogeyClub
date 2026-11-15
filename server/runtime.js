@@ -1,6 +1,6 @@
 // Bogey Club – Laufzeit für das selbst gehostete Bogey Club (Cloudflare Worker).
 // Bildet die Teile von window.claude nach, die die App nutzt: db, assets, downloads.
-// "sample" (KI-Erkennung) gibt es hier nicht – die App blendet das Foto-Einlesen dann aus.
+// "sample" (Scorekarte lesen) übernimmt hier die Texterkennung im Browser (ocr.js mit Tesseract.js) statt Claude.
 (() => {
   if (window.claude?.use) return;           // in Claude läuft die echte Laufzeit
   window.BOGEY_HOSTED = true;
@@ -73,11 +73,27 @@
     }
   };
 
+  // ---- Scorekarte lesen: Texterkennung im Browser, Ergebnis im selben JSON-Format wie bei Claude ----
+  window.BOGEY_SCAN_HINT = "Fotografiere die ausgefüllte Karte möglichst flach und vollständig oder wähle ein PDF, z. B. aus einer Golf-App. Die Texterkennung läuft direkt in deinem Browser (das Bild wird nicht hochgeladen) und liest Par, Lochvorgaben und Schlagzeilen. Gedruckte Karten und PDFs klappen am besten, Handschrift oft nicht – prüfe danach alles in der Karte. Zuverlässiger liest die iPhone- oder Mac-App mit Apples Texterkennung.";
+  window.BOGEY_SCAN_BUSY = "Karte wird gelesen … beim ersten Mal lädt der Browser die Texterkennung, das kann etwa eine Minute dauern.";
+  let ocrLoad = null;
+  const sample = {
+    async limits() { return { images: { maxCount: 3 } }; },
+    async json(_prompt, opts = {}) {
+      ocrLoad ??= new Promise((res, rej) => { const s = document.createElement("script"); s.src = "/ocr.js"; s.onload = res; s.onerror = rej; document.head.appendChild(s); })
+        .catch(e => { ocrLoad = null; throw e; });
+      await ocrLoad;
+      try { return await window.BogeyOCR.read(opts.images || []); }
+      catch (e) { const err = new Error("image_rejected"); err.code = "image_rejected"; throw err; }
+    }
+  };
+
   window.claude = {
     async use(name) {
       if (name === "db") return db;
       if (name === "assets") return assets;
       if (name === "downloads") return downloads;
+      if (name === "sample") return sample;
       return null;
     }
   };

@@ -9,3 +9,5 @@ osm/log.txt
 node_modules/
 .wrangler/
 .dev.vars
+.build/
+windows/dist/

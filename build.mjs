@@ -26,6 +26,7 @@ writeFileSync("public/index.html", head + app.replace(/<meta name="claude:[^>]*>
 
 copyFileSync("web/bogey-club-logo.png", "public/bogey-club-logo.png");
 copyFileSync("server/runtime.js", "public/runtime.js");
+copyFileSync("server/ocr.js", "public/ocr.js");
 for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png"]) copyFileSync(`server/icons/${f}`, `public/icons/${f}`);
 writeFileSync("public/manifest.webmanifest", JSON.stringify({
   name: "Bogey Club", short_name: "Bogey Club", lang: "de", start_url: "/", display: "standalone",

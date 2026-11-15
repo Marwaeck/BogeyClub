@@ -219,11 +219,11 @@ struct RoundEditorView: View {
         scanImage = image
         linkImport = nil
         do {
-            let rows = try await ScorecardScanner.scan(image)
-            if rows.isEmpty {
+            let result = try await ScorecardScanner.scan(image)
+            if result.rows.isEmpty {
                 message = "Keine Zahlenzeilen erkannt. Karte flach, gut beleuchtet und formatfüllend fotografieren."
             } else {
-                importRows = rows; importInfo = nil; showMapping = true
+                importRows = result.rows; importInfo = result.info; showMapping = true
             }
         } catch {
             message = "Erkennung fehlgeschlagen: \(error.localizedDescription)"

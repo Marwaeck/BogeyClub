@@ -1,0 +1,53 @@
+#!/bin/zsh
+# Baut „Bogey Club.app“ für den Mac nach mac/build/. Braucht Xcode (oder die Command Line Tools) und Node.
+# Aufruf aus dem Projektordner:  ./mac/build.sh      (oder: npm run mac)
+set -euo pipefail
+cd "$(dirname "$0")"
+
+VERSION="1.0"
+APP="build/Bogey Club.app"
+
+echo "→ Web-Oberfläche vorbereiten"
+node prepare-web.mjs
+
+echo "→ App übersetzen"
+ARCHS=(--arch arm64 --arch x86_64)
+if ! swift build -c release -debug-info-format none "${ARCHS[@]}" >/dev/null 2>build/swift-universal.log; then
+  echo "  (Universal-Build nicht möglich, baue nur für diesen Mac – Details: mac/build/swift-universal.log)"
+  ARCHS=()
+  swift build -c release -debug-info-format none
+fi
+BIN="$(swift build -c release -debug-info-format none "${ARCHS[@]}" --show-bin-path)/BogeyClub"
+
+echo "→ App-Paket zusammenstellen"
+rm -rf "$APP"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+cp "$BIN" "$APP/Contents/MacOS/BogeyClub"
+cp AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+cp -R build/web "$APP/Contents/Resources/web"
+cat > "$APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>Bogey Club</string>
+  <key>CFBundleDisplayName</key><string>Bogey Club</string>
+  <key>CFBundleIdentifier</key><string>club.bogey.mac</string>
+  <key>CFBundleExecutable</key><string>BogeyClub</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>${VERSION}</string>
+  <key>CFBundleVersion</key><string>${VERSION}</string>
+  <key>CFBundleDevelopmentRegion</key><string>de</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.sports</string>
+  <key>LSMinimumSystemVersion</key><string>13.0</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSHumanReadableCopyright</key><string>Privates Golf-Scorebuch. Kartendaten © OpenStreetMap-Mitwirkende, ODbL.</string>
+</dict>
+</plist>
+PLIST
+
+echo "→ Signieren (lokal)"
+codesign --force --deep --sign - "$APP" >/dev/null 2>&1
+
+echo "Fertig: mac/$APP"

@@ -5,7 +5,9 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "mac": "zsh mac/build.sh",
+    "windows": "npm --prefix windows install && npm --prefix windows run dist"
   },
   "devDependencies": {
     "wrangler": "^4.45.0"
