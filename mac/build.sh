@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSION="1.0"
+VERSION="$(node -p "require('../package.json').version")"   # eine Versionsnummer für alle Apps (package.json im Projektordner)
 APP="build/Bogey Club.app"
 
 echo "→ Web-Oberfläche vorbereiten"
@@ -25,6 +25,10 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/BogeyClub"
 cp AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp -R build/web "$APP/Contents/Resources/web"
+mkdir -p "$APP/Contents/Resources/Lizenzen"
+cp ../LICENSE "$APP/Contents/Resources/Lizenzen/LICENSE.txt"
+cp ../THIRD-PARTY-NOTICES.md "$APP/Contents/Resources/Lizenzen/Drittanbieter.txt"
+cp ../licenses/*.txt "$APP/Contents/Resources/Lizenzen/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -42,7 +46,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSApplicationCategoryType</key><string>public.app-category.sports</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSHumanReadableCopyright</key><string>Privates Golf-Scorebuch. Kartendaten © OpenStreetMap-Mitwirkende, ODbL.</string>
+  <key>NSHumanReadableCopyright</key><string>© 2026 Marwaeck. Alle Rechte vorbehalten.</string>
 </dict>
 </plist>
 PLIST
@@ -50,4 +54,8 @@ PLIST
 echo "→ Signieren (lokal)"
 codesign --force --deep --sign - "$APP" >/dev/null 2>&1
 
-echo "Fertig: mac/$APP"
+echo "→ ZIP für Downloads und Updater"
+ZIP="build/Bogey-Club-mac-${VERSION}.zip"
+ditto -c -k --keepParent "$APP" "$ZIP.tmp" && mv -f "$ZIP.tmp" "$ZIP"
+
+echo "Fertig: mac/$APP (Version ${VERSION}) und mac/$ZIP"

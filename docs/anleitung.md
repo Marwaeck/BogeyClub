@@ -6,15 +6,31 @@ lead: Installieren, Daten umziehen und Scorekarten einlesen – für Mac, Window
 
 ## Mac {#mac}
 
-1. **Bogey Club.app** aus den [Downloads](https://github.com/{{ site.repository }}/releases) laden und in den Ordner „Programme“ ziehen.
-2. Beim ersten Start mit Rechtsklick → **Öffnen** starten (die App ist nicht bei Apple registriert).
+**Mit einem Befehl:** Terminal öffnen (Programme → Dienstprogramme), diese Zeile einfügen, Enter drücken:
+
+```
+curl -fsSL https://raw.githubusercontent.com/Marwaeck/BogeyClub/main/install/mac.sh | zsh
+```
+
+Lädt die neueste Version, legt sie in „Programme“ und startet sie – auch zum Aktualisieren. Oder von Hand:
+
+1. **Bogey-Club-mac-&lt;Version&gt;.zip** aus den [Downloads](https://github.com/{{ site.repository }}/releases) laden, öffnen und **Bogey Club.app** in den Ordner „Programme“ ziehen.
+2. Beim ersten Start mit Rechtsklick → **Öffnen** starten (die App ist nicht bei Apple registriert; mit dem Befehl oben entfällt das).
 3. Daten liegen unter `~/Library/Application Support/Bogey Club` – Menü **Bogey Club → Datenordner im Finder zeigen**. Einmal am Tag wird automatisch eine Kopie unter „Sicherungen“ abgelegt.
 
 Selbst bauen (Xcode und Node nötig): `npm run mac` im Projektordner → `mac/build/Bogey Club.app`.
 
 ## Windows {#windows}
 
-1. **Bogey-Club-portable.zip** aus den [Downloads](https://github.com/{{ site.repository }}/releases) laden und entpacken.
+**Mit einem Befehl:** PowerShell öffnen (Start → „PowerShell“ tippen), diese Zeile einfügen, Enter drücken:
+
+```
+irm https://raw.githubusercontent.com/Marwaeck/BogeyClub/main/install/windows.ps1 | iex
+```
+
+Installiert die neueste Version ohne Administratorrechte, mit Verknüpfung im Startmenü und auf dem Desktop – auch zum Aktualisieren. Oder von Hand:
+
+1. **Bogey-Club-windows-&lt;Version&gt;.zip** aus den [Downloads](https://github.com/{{ site.repository }}/releases) laden und entpacken.
 2. **Bogey Club.exe** starten. Fragt Windows nach („Der Computer wurde durch Windows geschützt“): **Weitere Informationen → Trotzdem ausführen**.
 3. Daten liegen unter `%APPDATA%\Bogey Club` – Menü **Datei → Datenordner öffnen**.
 
@@ -27,6 +43,12 @@ Das Projekt `ios/GolfScorebuch/GolfScorebuch.xcodeproj` in Xcode öffnen, das ei
 ## Web {#web}
 
 Die Web-App läuft als Cloudflare Worker mit Datenbank und Bildspeicher; Zugang über Cloudflare Access. Einrichtung und lokales Testen stehen in der [README](https://github.com/{{ site.repository }}#hosting-auf-cloudflare).
+
+## Updates, Version und Lizenz
+
+- **Updates:** Mac- und Windows-App schauen einmal am Tag auf GitHub nach einer neuen Version und bieten sie mit **Jetzt installieren** an – die App wird ausgetauscht und neu gestartet, die Daten bleiben. Von Hand: Mac **Bogey Club → Nach Updates suchen …**, Windows **Hilfe → Nach Updates suchen …**. Die automatische Suche lässt sich im selben Menü ausschalten.
+- **Version:** steht im Fenster **Über Bogey Club**.
+- **Lizenz:** privat und kostenlos nutzbar, Quellcode und Gestaltung © Marwaeck, alle Rechte vorbehalten – [LICENSE](https://github.com/{{ site.repository }}/blob/main/LICENSE). Bausteine anderer (Schriften, PDF, Texterkennung, Karten) stehen unter ihren eigenen Lizenzen: [Übersicht](https://github.com/{{ site.repository }}/blob/main/THIRD-PARTY-NOTICES.md), in den Apps unter **Lizenzen der Bausteine …**.
 
 ## Daten umziehen
 

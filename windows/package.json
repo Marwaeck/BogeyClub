@@ -3,15 +3,15 @@
   "productName": "Bogey Club",
   "version": "1.0.0",
   "description": "Bogey Club – privates Golf-Scorebuch für Windows (ohne Claude, Daten auf dem PC)",
-  "author": "Bogey Club",
+  "author": "Marwaeck",
   "private": true,
   "main": "main.js",
   "scripts": {
     "prepare-web": "node ../mac/prepare-web.mjs --target windows",
     "start": "npm run prepare-web && electron .",
     "test": "node --test test/",
-    "dist": "npm run prepare-web && electron-builder --win --x64",
-    "dist:installer": "npm run prepare-web && electron-builder --win nsis --x64"
+    "dist": "node dist.js",
+    "dist:installer": "node dist.js --installer"
   },
   "devDependencies": {
     "@tesseract.js-data/deu": "^1.0.0",
@@ -23,7 +23,7 @@
   "build": {
     "appId": "club.bogey.windows",
     "productName": "Bogey Club",
-    "copyright": "Privates Golf-Scorebuch",
+    "copyright": "© 2026 Marwaeck. Alle Rechte vorbehalten.",
     "directories": {
       "output": "dist",
       "buildResources": "build-resources"
@@ -32,6 +32,7 @@
       "main.js",
       "preload.js",
       "store.js",
+      "updater.js",
       "package.json",
       "build/web/**/*",
       "build/icon.png"
@@ -46,8 +47,7 @@
           ]
         }
       ],
-      "icon": "build/icon.png",
-      "artifactName": "Bogey-Club-${version}-portable.${ext}"
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
@@ -57,5 +57,6 @@
       "artifactName": "Bogey-Club-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false
     }
-  }
+  },
+  "license": "SEE LICENSE IN ../LICENSE"
 }

@@ -7,9 +7,9 @@
   },
   "stack": "Builder's choice",
   "status": "ready",
-  "note": "Ready: all 2 checks pass. 2 questions about the original are still open.",
+  "note": "Ready: all 2 checks pass. 3 questions about the original are still open.",
   "created_ms": 1794740033724,
-  "updated_ms": 1794771931360,
+  "updated_ms": 1794773220828,
   "checks": [
     {
       "round": 1,
@@ -244,6 +244,60 @@
       "note": "No tests ran: package.json has no `test` script to run.",
       "artifacts": [],
       "at_ms": 1794771609915
+    },
+    {
+      "round": 14,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "`npm run build --if-present` passed.",
+      "artifacts": [],
+      "at_ms": 1794772879291
+    },
+    {
+      "round": 14,
+      "check": "own-tests",
+      "passed": true,
+      "similarity": null,
+      "note": "No tests ran: package.json has no `test` script to run.",
+      "artifacts": [],
+      "at_ms": 1794772879291
+    },
+    {
+      "round": 15,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "`npm run build --if-present` passed.",
+      "artifacts": [],
+      "at_ms": 1794773071580
+    },
+    {
+      "round": 15,
+      "check": "own-tests",
+      "passed": true,
+      "similarity": null,
+      "note": "No tests ran: package.json has no `test` script to run.",
+      "artifacts": [],
+      "at_ms": 1794773071581
+    },
+    {
+      "round": 16,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "`npm run build --if-present` passed.",
+      "artifacts": [],
+      "at_ms": 1794773215935
+    },
+    {
+      "round": 16,
+      "check": "own-tests",
+      "passed": true,
+      "similarity": null,
+      "note": "No tests ran: package.json has no `test` script to run.",
+      "artifacts": [],
+      "at_ms": 1794773215935
     }
   ],
   "agent_session": "75cfb722-1a4d-4423-ba11-8ec5547680ad",
@@ -251,7 +305,7 @@
   "agent_session_deep": false,
   "capture_deep": false,
   "allowed_actions": [],
-  "last_reply": "The earlier changes are already on GitHub (you pushed them). Now committing the website and trying to push.Die Website ist lokal gespeichert, aber noch nicht auf GitHub: Das Hochladen hat Craft Anything wieder blockiert, weil das Veröffentlichen hier nicht freigegeben ist. Klicke in GitHub Desktop einfach wieder auf „Push origin“ – so wie du es mit dem letzten Stand schon gemacht hast. Danach unter Settings → Pages den Branch `main` mit Ordner `/docs` einstellen, dann ist die Seite unter marwaeck.github.io/BogeyClub erreichbar.",
+  "last_reply": "Got it: one command that saves everything, uploads it to GitHub and publishes a new version of the Mac and Windows apps. I'll turn the release script into exactly that.Jetzt gibt es einen Befehl, der alles auf einmal macht: `npm run release` im Projektordner, oder einfach Doppelklick auf **Veröffentlichen.command** im Finder. Er erhöht die Versionsnummer, fragt kurz „Was ist neu?“, speichert alles, lädt es zu GitHub hoch, baut Mac- und Windows-App und veröffentlicht beide als neue Version, sodass die Updater sie finden. Beim ersten Mal wird Version 1.0.0 veröffentlicht.\n\nGetestet habe ich nur einen Probelauf (`npm run release -- --probe`), der anzeigt, was passieren würde, ohne etwas zu ändern. Das echte Hochladen und Veröffentlichen konnte ich nicht ausprobieren, weil Craft Anything mir das nicht erlaubt; bei dir läuft es, weil du bei GitHub angemeldet bist.\n\nWichtig: Der Befehl lädt alles im Ordner hoch, auch die Arbeitsnotizen von Craft Anything – so wie bei deinem letzten Hochladen.",
   "asset_budget_usd": 5.0,
   "generate_assets": false,
   "app_in_root": true,

@@ -39,6 +39,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         self.window = window
         NSApp.activate(ignoringOtherApps: true)
+
+        // Nach Updates suchen (still, höchstens einmal am Tag) – nicht beim Entwickeln mit „swift run“
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { Updater.shared.checkOnLaunch() }
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -50,9 +55,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let appItem = NSMenuItem(); main.addItem(appItem)
         let app = NSMenu()
-        app.addItem(withTitle: "Über Bogey Club", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        app.addItem(withTitle: "Über Bogey Club", action: #selector(showAbout), keyEquivalent: "")
+        app.addItem(withTitle: "Nach Updates suchen …", action: #selector(checkForUpdates), keyEquivalent: "")
+        let auto = app.addItem(withTitle: "Automatisch nach Updates suchen", action: #selector(toggleAutoUpdate(_:)), keyEquivalent: "")
+        auto.state = Updater.shared.automatic ? .on : .off
         app.addItem(.separator())
         app.addItem(withTitle: "Datenordner im Finder zeigen", action: #selector(showDataFolder), keyEquivalent: "")
+        app.addItem(withTitle: "Lizenz …", action: #selector(showLicense), keyEquivalent: "")
+        app.addItem(withTitle: "Lizenzen der Bausteine …", action: #selector(showThirdParty), keyEquivalent: "")
         app.addItem(.separator())
         app.addItem(withTitle: "Bogey Club ausblenden", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         let others = app.addItem(withTitle: "Andere ausblenden", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
@@ -97,6 +107,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = main
     }
 
+    @objc private func showAbout() {
+        let credits = NSMutableAttributedString(string: "Privates Golf-Scorebuch.\nCopyright © 2026 Marwaeck. Alle Rechte vorbehalten – private Nutzung kostenlos.\nKartendaten © OpenStreetMap-Mitwirkende, ODbL.",
+            attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor])
+        NSApp.orderFrontStandardAboutPanel(options: [.credits: credits])
+    }
+    @objc private func checkForUpdates() { Task { await Updater.shared.check(interactive: true) } }
+    @objc private func toggleAutoUpdate(_ item: NSMenuItem) {
+        Updater.shared.automatic.toggle()
+        item.state = Updater.shared.automatic ? .on : .off
+    }
+    private var legalFolder: URL { Bundle.main.resourceURL!.appendingPathComponent("Lizenzen", isDirectory: true) }
+    @objc private func showLicense() { NSWorkspace.shared.open(legalFolder.appendingPathComponent("LICENSE.txt")) }
+    @objc private func showThirdParty() { NSWorkspace.shared.open(legalFolder) }
     @objc private func showDataFolder() { NSWorkspace.shared.open(store?.folder ?? Store.defaultFolder) }
     @objc private func reload() { web?.reload() }
     @objc private func zoomReset() { web?.zoom(to: 1) }

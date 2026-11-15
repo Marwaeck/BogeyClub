@@ -122,3 +122,9 @@ h3 { font-size: 24px; }
 /* Erste Überschrift eines Abschnitts ohne zusätzlichen Abstand */
 .section.prose > :first-child, .prose > :first-child { margin-top: 0; }
 @media (max-width: 480px) { .brand span { display: none; } }
+
+/* Installations-Befehle */
+.install { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 28px; }
+.install h3 { font-size: 20px; margin-bottom: 8px; }
+.install pre { margin: 0; background: var(--green-1); color: var(--cream); border-radius: 10px; padding: 14px 16px; overflow-x: auto; }
+.install code { font: 13.5px/1.5 ui-monospace, "SF Mono", Consolas, monospace; white-space: pre; }

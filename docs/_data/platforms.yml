@@ -1,10 +1,10 @@
 - name: Mac
-  text: Eigene App für macOS 13 oder neuer, Apple-Chip und Intel. Daten auf dem Mac, Foto-Einlesen offline.
-  file: Bogey Club.app (als ZIP)
+  text: Eigene App für macOS 13 oder neuer, Apple-Chip und Intel. Daten auf dem Mac, Foto-Einlesen offline, Updates per Klick.
+  file: Bogey-Club-mac-<Version>.zip
   anchor: mac
 - name: Windows
-  text: Für Windows 10 und 11 (64 Bit). ZIP entpacken, „Bogey Club.exe“ starten – keine Installation nötig.
-  file: Bogey-Club-portable.zip
+  text: Für Windows 10 und 11 (64 Bit). ZIP entpacken, „Bogey Club.exe“ starten – keine Installation nötig. Updates per Klick.
+  file: Bogey-Club-windows-<Version>.zip
   anchor: windows
 - name: iPhone
   text: SwiftUI-App mit Dokumentenscanner. Aus dem Projekt in Xcode auf das eigene iPhone installieren.

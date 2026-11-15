@@ -72,6 +72,29 @@ Die Web-App läuft als ein Cloudflare Worker (`wrangler.jsonc`):
 - **Zugang:** Cloudflare Access. Der Worker prüft bei jeder Anfrage das Access-Token gegen `ACCESS_TEAM` und `ACCESS_AUD`; sind die leer, bleibt die App geschlossen.
 - **Deploy:** Workers Builds, verbunden mit diesem Repo – jeder Push auf `main` wird veröffentlicht.
 
+## Installieren mit einem Befehl
+
+Lädt jeweils die neueste Version aus den GitHub-Releases (Daten bleiben unberührt, auch zum Aktualisieren):
+
+```bash
+# Mac (Terminal) → /Applications/Bogey Club.app
+curl -fsSL https://raw.githubusercontent.com/Marwaeck/BogeyClub/main/install/mac.sh | zsh
+```
+
+```powershell
+# Windows (PowerShell) → %LOCALAPPDATA%\Programs\Bogey Club, mit Startmenü- und Desktop-Verknüpfung
+irm https://raw.githubusercontent.com/Marwaeck/BogeyClub/main/install/windows.ps1 | iex
+```
+
+Skripte: `install/mac.sh`, `install/windows.ps1`. Voraussetzung: ein veröffentlichtes Release (`npm run release`).
+
+## Version, Lizenz und Updates (Mac und Windows)
+
+- **Version:** eine Nummer für beide Apps, `version` in `package.json` im Projektordner. `mac/build.sh` und `windows/dist.js` übernehmen sie (Über-Fenster, Dateinamen).
+- **Lizenz:** `LICENSE` – private Nutzung kostenlos, Quellcode und Gestaltung © Marwaeck, alle Rechte vorbehalten. Bausteine anderer: `THIRD-PARTY-NOTICES.md`, Lizenztexte in `licenses/`. Beides liegt in den Apps bei (Menü „Lizenz …“ / „Lizenzen der Bausteine …“).
+- **Updater:** beide Apps fragen einmal am Tag (und über „Nach Updates suchen …“) das neueste GitHub-Release ab. Gibt es eine höhere Version mit `Bogey-Club-mac-<Version>.zip` bzw. `Bogey-Club-windows-<Version>.zip`, bieten sie **Jetzt installieren** an: Mac prüft Bundle-ID, Version und Signatur, tauscht die App aus und startet neu; Windows entpackt die ZIP und kopiert sie nach dem Beenden über den App-Ordner. Daten bleiben unberührt. Logik und Tests: `mac/Sources/BogeyCore/UpdateCheck.swift`, `UpdateInstaller.swift`, `windows/updater.js`.
+- **Speichern, hochladen und veröffentlichen – ein Befehl:** `npm run release` im Projektordner (oder Doppelklick auf **Veröffentlichen.command** im Finder). Erhöht die Version (1.0.0 → 1.0.1; `npm run release -- minor` bzw. `-- 2.0.0` für größere Sprünge), fragt nach den Neuerungen, speichert alles (commit), lädt es hoch (push), baut Mac- und Windows-App und legt das GitHub-Release `v<Version>` mit beiden ZIP-Dateien an. Das erste Mal wird 1.0.0 veröffentlicht. `npm run release -- --probe` zeigt nur, was passieren würde. Braucht die GitHub-CLI (`gh auth login`).
+
 ## Windows-App (ohne Claude)
 
 Gleicher Aufbau wie die Mac-App: `web/index.html` in einem eigenen Fenster, `mac/runtime.js` als Brücke (unter Windows über `windows/preload.js`), Datenablage in `windows/store.js` im selben Format wie auf dem Mac.
@@ -83,11 +106,11 @@ Gleicher Aufbau wie die Mac-App: `web/index.html` in einem eigenen Fenster, `mac
 Bauen (auf Mac oder Windows, Node nötig):
 
 ```bash
-npm run windows      # → windows/dist/Bogey-Club-1.0.0-portable.zip (darin „Bogey Club.exe“)
+npm run windows      # → windows/dist/Bogey-Club-windows-<Version>.zip (darin „Bogey Club.exe“)
 cd windows && npm test
 ```
 
-Die ZIP-Datei auf dem PC entpacken und „Bogey Club.exe“ starten (Windows fragt beim ersten Start evtl. nach, weil die App nicht signiert ist: „Weitere Informationen → Trotzdem ausführen“). Ein Installationsprogramm mit Startmenü-Eintrag lässt sich nur unter Windows (oder auf Intel-Macs) bauen: `cd windows && npm run dist:installer`.
+Die ZIP-Datei auf dem PC entpacken und „Bogey Club.exe“ starten (Windows fragt beim ersten Start evtl. nach, weil die App nicht signiert ist: „Weitere Informationen → Trotzdem ausführen“). Ein Installationsprogramm mit Startmenü-Eintrag lässt sich nur unter Windows (oder auf Intel-Macs) bauen: `cd windows && npm run dist:installer`. Der Updater ist für die ZIP-Version gebaut.
 
 ## Texterkennung auf allen Plattformen
 

@@ -1,5 +1,6 @@
 {
   "name": "bogeyclub",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,9 +8,11 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "mac": "zsh mac/build.sh",
-    "windows": "npm --prefix windows install && npm --prefix windows run dist"
+    "windows": "npm --prefix windows install && npm --prefix windows run dist",
+    "release": "zsh scripts/release.sh"
   },
   "devDependencies": {
     "wrangler": "^4.45.0"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }

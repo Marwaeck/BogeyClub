@@ -51,10 +51,14 @@ layout: default
       <div class="platform">
         <h3>{{ p.name }}</h3>
         <p>{{ p.text }}</p>
-        <p class="file">{{ p.file }}</p>
+        <p class="file">{{ p.file | escape }}</p>
         <a class="link" href="{{ '/anleitung/' | relative_url }}#{{ p.anchor }}">So geht’s →</a>
       </div>
       {%- endfor %}
+    </div>
+    <div class="install">
+      <div><h3>Mac – ein Befehl im Terminal</h3><pre><code>curl -fsSL https://raw.githubusercontent.com/{{ site.repository }}/main/install/mac.sh | zsh</code></pre></div>
+      <div><h3>Windows – ein Befehl in PowerShell</h3><pre><code>irm https://raw.githubusercontent.com/{{ site.repository }}/main/install/windows.ps1 | iex</code></pre></div>
     </div>
     <div class="actions center">
       <a class="btn primary" href="https://github.com/{{ site.repository }}/releases">Downloads auf GitHub</a>

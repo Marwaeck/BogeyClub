@@ -2,10 +2,13 @@
 // Daten und Bilder liegen auf dem PC (%APPDATA%\Bogey Club), Scorekarten liest die mitgelieferte
 // Texterkennung (Tesseract) offline. Aufbau wie die Mac-App: Seiten unter bogey://app/…,
 // Bilder unter bogey://app/_blob/<id>, Befehle der Oberfläche über preload.js.
-const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, shell } = require("electron");
+const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, shell, net } = require("electron");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
+const { execFile, spawn } = require("node:child_process");
 const { Store } = require("./store");
+const updater = require("./updater");
 
 app.setName("Bogey Club");
 app.setAppUserModelId("club.bogey.windows");
@@ -69,6 +72,79 @@ async function handle(_e, msg) {
   }
 }
 
+// ---------- Einstellungen (Updater) ----------
+const settingsPath = () => path.join(DATA, "einstellungen.json");
+function settings() { try { return JSON.parse(fs.readFileSync(settingsPath(), "utf8")); } catch (e) { return {}; } }
+function saveSettings(patch) { try { fs.writeFileSync(settingsPath(), JSON.stringify({ ...settings(), ...patch }, null, 2)); } catch (e) { } }
+const autoUpdate = () => settings().updateAutomatic !== false;
+
+// ---------- Lizenz ----------
+const LEGAL = app.isPackaged ? path.join(process.resourcesPath, "Lizenzen") : path.join(__dirname, "..", "licenses");
+const LICENSE_FILE = app.isPackaged ? path.join(LEGAL, "LICENSE.txt") : path.join(__dirname, "..", "LICENSE");
+
+// ---------- Updater: GitHub-Releases ----------
+let checking = false;
+async function checkForUpdates(interactive) {
+  if (checking) return;
+  checking = true;
+  saveSettings({ updateLastCheck: Date.now() });
+  const info = (message, detail) => interactive && dialog.showMessageBox(win, { type: "info", title: "Bogey Club", message, detail });
+  try {
+    let release;
+    try {
+      const r = await net.fetch(updater.LATEST_URL, { headers: { accept: "application/vnd.github+json", "user-agent": `BogeyClub-Windows/${app.getVersion()}` } });
+      if (r.status === 404) { info("Du hast die neueste Version.", `Bogey Club ${app.getVersion()} – auf GitHub ist noch keine neuere Version veröffentlicht.`); return; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      release = updater.parseRelease(await r.text());
+    } catch (e) {
+      info("Keine Verbindung zu GitHub.", "Die Suche nach Updates braucht Internet. Bitte später erneut versuchen.");
+      return;
+    }
+    if (!updater.isNewer(release.version, app.getVersion())) { info("Du hast die neueste Version.", `Bogey Club ${app.getVersion()} ist aktuell.`); return; }
+    if (!interactive && settings().updateSkip === release.version) return;
+
+    const canInstall = !!release.assetURL && app.isPackaged && process.platform === "win32";
+    const { response } = await dialog.showMessageBox(win, {
+      type: "info", title: "Update verfügbar", message: `Bogey Club ${release.version} ist verfügbar`,
+      detail: `Installiert ist ${app.getVersion()}. Deine Spieler, Plätze und Runden bleiben erhalten.` + (release.notes ? `\n\nNeu:\n${release.notes.slice(0, 700)}` : ""),
+      buttons: [canInstall ? "Jetzt installieren" : "Download-Seite öffnen", "Später", "Diese Version überspringen"], defaultId: 0, cancelId: 1
+    });
+    if (response === 2) saveSettings({ updateSkip: release.version });
+    if (response !== 0) return;
+    if (!canInstall) { shell.openExternal(release.pageURL); return; }
+    await installUpdate(release);
+  } finally { checking = false; }
+}
+
+// Neue Version laden, entpacken und nach dem Beenden über den App-Ordner kopieren (siehe updater.installScript)
+async function installUpdate(release) {
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), "bogey-update-"));
+  const zip = path.join(work, "update.zip"), unpacked = path.join(work, "neu");
+  try {
+    win?.setProgressBar(2);   // unbestimmter Fortschritt in der Taskleiste
+    const r = await net.fetch(release.assetURL);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    fs.writeFileSync(zip, Buffer.from(await r.arrayBuffer()));
+    fs.mkdirSync(unpacked);
+    // tar.exe gehört ab Windows 10 zum System und kann ZIP-Dateien entpacken
+    await new Promise((ok, no) => execFile("tar", ["-xf", zip, "-C", unpacked], { windowsHide: true }, e => e ? no(e) : ok()));
+    if (!fs.existsSync(path.join(unpacked, "Bogey Club.exe"))) throw new Error("ZIP ohne Bogey Club.exe");
+    const script = path.join(work, "update.cmd");
+    fs.writeFileSync(script, updater.installScript({ pid: process.pid, source: unpacked, target: path.dirname(process.execPath), page: release.pageURL }));
+    spawn("cmd.exe", ["/c", script], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+    app.quit();
+  } catch (e) {
+    console.error(e);
+    win?.setProgressBar(-1);
+    const { response } = await dialog.showMessageBox(win, {
+      type: "warning", title: "Bogey Club", message: "Das Update konnte nicht installiert werden.",
+      detail: "Lade die neue Version bitte von der Download-Seite, entpacke sie und ersetze den alten Bogey-Club-Ordner. Deine Daten bleiben dabei erhalten.",
+      buttons: ["Download-Seite öffnen", "Abbrechen"]
+    });
+    if (response === 0) shell.openExternal(release.pageURL);
+  }
+}
+
 function buildMenu() {
   const template = [
     { label: "Datei", submenu: [
@@ -89,9 +165,16 @@ function buildMenu() {
       { role: "togglefullscreen", label: "Vollbild" }
     ] },
     { label: "Hilfe", submenu: [
+      { label: "Nach Updates suchen …", click: () => checkForUpdates(true) },
+      { label: "Automatisch nach Updates suchen", type: "checkbox", checked: autoUpdate(), click: item => saveSettings({ updateAutomatic: item.checked }) },
+      { type: "separator" },
+      { label: "Lizenz …", click: () => shell.openPath(LICENSE_FILE) },
+      { label: "Lizenzen der Bausteine …", click: () => shell.openPath(LEGAL) },
+      { type: "separator" },
       { label: "Über Bogey Club", click: () => dialog.showMessageBox(win, {
         type: "info", title: "Bogey Club", message: `Bogey Club ${app.getVersion()}`,
-        detail: "Privates Golf-Scorebuch.\nDaten liegen auf diesem PC:\n" + DATA + "\n\nKartendaten © OpenStreetMap-Mitwirkende, ODbL. Texterkennung: Tesseract (Apache 2.0)."
+        detail: "Privates Golf-Scorebuch.\n© 2026 Marwaeck. Alle Rechte vorbehalten – private Nutzung kostenlos.\n\nDaten liegen auf diesem PC:\n" + DATA +
+          "\n\nKartendaten © OpenStreetMap-Mitwirkende, ODbL. Texterkennung: Tesseract (Apache 2.0). Lizenzen: Hilfe → Lizenzen der Bausteine."
       }) }
     ] }
   ];
@@ -136,6 +219,10 @@ app.whenReady().then(() => {
   ipcMain.handle("bogey", handle);
   buildMenu();
   createWindow();
+  // Still nach Updates suchen – höchstens einmal am Tag, nur in der fertigen App
+  if (app.isPackaged && autoUpdate() && Date.now() - (settings().updateLastCheck || 0) > 24 * 3600 * 1000) {
+    setTimeout(() => checkForUpdates(false), 4000);
+  }
 });
 
 app.on("window-all-closed", () => app.quit());
