@@ -1,0 +1,18 @@
+- icon: scan
+  title: Scorekarte einlesen
+  text: Foto oder PDF wählen – Par, Lochvorgaben und Schläge werden erkannt. Auf iPhone und Mac mit Apples Texterkennung, offline.
+- icon: calc
+  title: Stableford & Handicap
+  text: Spielvorgabe, Stableford-Punkte und Score-Differential nach WHS/DGV – mit virtuellem Handicap aus den besten Runden.
+- icon: chart
+  title: Saison-Statistik
+  text: Durchschnitte, Bestwerte, Form und Verlauf je Spieler und Jahr – für 9- und 18-Loch-Runden.
+- icon: trophy
+  title: Ranking & Badges
+  text: Wer führt die Order of Merit an? Rekorde, Abzeichen und ein Saisonrückblick als PDF.
+- icon: map
+  title: Platz-Briefing
+  text: Platzkarten aus OpenStreetMap mit Bahnen, Grüns und Hindernissen – dazu Tipps aus den eigenen Runden.
+- icon: lock
+  title: Deine Daten bleiben bei dir
+  text: Mac- und Windows-App speichern alles auf dem eigenen Rechner. Backup als Datei, Umzug zwischen allen Versionen.

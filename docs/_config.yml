@@ -1,0 +1,34 @@
+# Bogey Club – Website auf GitHub Pages (eigenes Jekyll-Theme in diesem Ordner)
+# Einschalten: GitHub → Repository → Settings → Pages → „Deploy from a branch“ → main, Ordner /docs
+title: Bogey Club
+tagline: Scorekarten sammeln, Saison auswerten, Bogeys feiern.
+description: >-
+  Privates Golf-Scorebuch für Web, iPhone, Mac und Windows: Scorekarten einlesen, Stableford und
+  Handicap nach WHS, Jahresstatistik, Ranking, Badges und Platz-Briefings.
+lang: de
+url: "https://marwaeck.github.io"
+baseurl: "/BogeyClub"
+repository: Marwaeck/BogeyClub
+logo: /assets/img/logo.png
+
+# Optional: Adresse der gehosteten Web-App (Cloudflare). Leer lassen, dann wird kein Knopf gezeigt.
+webapp_url: ""
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  auto_ids: true
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+defaults:
+  - scope: { path: "" }
+    values: { layout: page, image: /assets/img/social-card.png }
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - vendor

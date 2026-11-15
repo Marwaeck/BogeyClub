@@ -1,0 +1,14 @@
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="{{ '/' | relative_url }}">
+      <img src="{{ site.logo | relative_url }}" alt="" width="40" height="40">
+      <span>{{ site.title }}</span>
+    </a>
+    <nav class="nav" aria-label="Hauptmenü">
+      {%- for item in site.data.nav %}
+      <a href="{{ item.url | relative_url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a>
+      {%- endfor %}
+      <a class="nav-gh" href="https://github.com/{{ site.repository }}">GitHub</a>
+    </nav>
+  </div>
+</header>

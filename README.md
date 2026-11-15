@@ -16,6 +16,7 @@ Privates Golf-Scorebuch: Scorekarten erfassen (Foto, PDF oder TAG-Heuer-Link), m
 | `osm/` | Platzkarten aus OpenStreetMap: `fetch.sh` lädt die Rohdaten über Overpass, `osm2map.py` wandelt sie in kompakte Karten-JSON um, `render.js` zeichnet sie als SVG. |
 | `server/` | Cloudflare Worker (`worker.js`: API, Bilder, Zugangsprüfung), `runtime.js`, das im Browser die Claude-Laufzeit (Datenbank, Bilder, Downloads, Scorekarte lesen) ersetzt, und `ocr.js` – die Scorekarten-Erkennung im Browser. |
 | `public/` | Von `build.mjs` erzeugt: die ausgelieferte Web-App. Nicht von Hand ändern. |
+| `docs/` | Website für GitHub Pages mit eigenem Jekyll-Theme (Farben, Schriften und Logo der App): Startseite, Funktionen, Downloads, Anleitung. Einschalten unter Settings → Pages → Branch `main`, Ordner `/docs`. |
 | `design/` | Frühere Icon-Entwürfe und das GitHub-Vorschaubild `social-card.png` (gezeichnet von `make-social-card.swift`; hochladen unter Settings → General → Social preview). |
 
 ## Golf-Logik (WHS / DGV)

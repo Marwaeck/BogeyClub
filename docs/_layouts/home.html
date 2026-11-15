@@ -1,0 +1,67 @@
+---
+layout: default
+---
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <p class="kicker">Privates Golf-Scorebuch</p>
+      <h1>{{ site.title }}</h1>
+      <p class="lead">{{ site.tagline }}</p>
+      <p class="sub">{{ page.intro }}</p>
+      <div class="actions">
+        <a class="btn primary" href="#download">Herunterladen</a>
+        {% if site.webapp_url != "" %}<a class="btn" href="{{ site.webapp_url }}">Web-App öffnen</a>{% endif %}
+        <a class="btn ghost" href="{{ '/anleitung/' | relative_url }}">Anleitung</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img class="hero-logo" src="{{ site.logo | relative_url }}" alt="Bogey-Club-Logo" width="320" height="320">
+    </div>
+  </div>
+</section>
+
+{% if page.screenshot %}
+<section class="shot wrap">
+  <figure>
+    <img src="{{ page.screenshot | relative_url }}" alt="{{ page.screenshot_alt }}" loading="lazy">
+    <figcaption>{{ page.screenshot_alt }}</figcaption>
+  </figure>
+</section>
+{% endif %}
+
+<section id="funktionen" class="wrap section">
+  <h2>Funktionen</h2>
+  <div class="cards">
+    {%- for f in site.data.features %}
+    <div class="card">
+      <span class="card-ic">{% include icon.html name=f.icon %}</span>
+      <h3>{{ f.title }}</h3>
+      <p>{{ f.text }}</p>
+    </div>
+    {%- endfor %}
+  </div>
+</section>
+
+<section id="download" class="band">
+  <div class="wrap section">
+    <h2>Für alle Geräte</h2>
+    <p class="lead">Dieselbe Oberfläche überall. Daten zieht ihr per Backup-Datei zwischen den Versionen um.</p>
+    <div class="platforms">
+      {%- for p in site.data.platforms %}
+      <div class="platform">
+        <h3>{{ p.name }}</h3>
+        <p>{{ p.text }}</p>
+        <p class="file">{{ p.file }}</p>
+        <a class="link" href="{{ '/anleitung/' | relative_url }}#{{ p.anchor }}">So geht’s →</a>
+      </div>
+      {%- endfor %}
+    </div>
+    <div class="actions center">
+      <a class="btn primary" href="https://github.com/{{ site.repository }}/releases">Downloads auf GitHub</a>
+    </div>
+  </div>
+</section>
+
+<section class="wrap section prose">
+  {{ content }}
+</section>
