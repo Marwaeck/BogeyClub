@@ -16,7 +16,9 @@ final class ParserTests: XCTestCase {
     }
 
     func testEighteenHolesWithSumColumnsAndBlank() {
-        let holes = (1...9).map(String.init) + ["Out"] + (10...18).map(String.init) + ["In", "Total"]
+        let front: [String] = (1...9).map { String($0) }
+        let back: [String] = (10...18).map { String($0) }
+        let holes: [String] = front + ["Out"] + back + ["In", "Total"]
         let par = ["4", "5", "3", "4", "4", "3", "5", "4", "4", "36", "4", "4", "3", "5", "4", "4", "3", "5", "4", "36", "72"]
         let si = ["7", "1", "15", "9", "3", "17", "5", "11", "13", "", "8", "2", "16", "10", "4", "18", "6", "12", "14", "", ""]
         let marcel = ["5", "6", "3", "5", "", "4", "6", "5", "4", "38", "5", "5", "4", "6", "5", "4", "3", "6", "5", "43", "81"]
@@ -88,8 +90,9 @@ final class ReaderTests: XCTestCase {
         func text(_ s: String, _ x: Int, _ y: Int) {
             NSAttributedString(string: s, attributes: [.font: font, .foregroundColor: NSColor.black]).draw(at: NSPoint(x: x, y: y))
         }
+        let holeLabels: [String] = (1...9).map { String($0) } + ["Out"]
         let rows: [(String, [String])] = [
-            ("Loch", (1...9).map(String.init) + ["Out"]),
+            ("Loch", holeLabels),
             ("Par", ["4", "5", "3", "4", "4", "3", "5", "4", "4", "36"]),
             ("Hcp", ["7", "1", "15", "9", "3", "17", "5", "11", "13", ""]),
             ("Julia", ["5", "6", "4", "", "5", "4", "6", "5", "5", "45"]),

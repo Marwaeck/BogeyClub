@@ -9,7 +9,7 @@
   "scripts": {
     "prepare-web": "node ../mac/prepare-web.mjs --target windows",
     "start": "npm run prepare-web && electron .",
-    "test": "node --test test/",
+    "test": "node --test \"test/*.test.js\"",
     "dist": "node dist.js",
     "dist:installer": "node dist.js --installer"
   },
