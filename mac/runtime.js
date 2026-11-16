@@ -1,12 +1,26 @@
-// Bogey Club – Laufzeit für die Desktop-Apps (Mac und Windows). Bildet die Teile von window.claude nach,
+// Bogey Club – Laufzeit für die Apps ohne Claude (Mac, Windows und Android). Bildet die Teile von window.claude nach,
 // die die App nutzt: db (Daten als Datei auf dem Rechner), assets (Bilder), downloads (Sichern-Dialog)
-// und sample (Scorekarte lesen – offline: auf dem Mac mit Apples Texterkennung, unter Windows mit
-// Tesseract aus ocr.js, das in der App mitgeliefert wird).
+// und sample (Scorekarte lesen – offline: auf dem Mac mit Apples Texterkennung, unter Windows und Android
+// mit Tesseract aus ocr.js, das in der App mitgeliefert wird).
 (() => {
-  const win = window.bogeyNative?.platform === "windows";
+  // Android: Befehle gehen über window.BogeyAndroid (android/…/MainActivity.kt), Antworten kommen über __bogeyReply
+  if (!window.bogeyNative && window.BogeyAndroid) {
+    const pending = new Map(); let next = 1;
+    window.__bogeyReply = (id, value) => { const done = pending.get(id); if (done) { pending.delete(id); done(value); } };
+    window.bogeyNative = {
+      platform: "android",
+      postMessage: msg => new Promise(done => { const id = next++; pending.set(id, done); window.BogeyAndroid.post(id, JSON.stringify(msg)); })
+    };
+  }
+  const platform = window.bogeyNative?.platform;
+  const android = platform === "android";
+  const win = platform === "windows" || android;   // Windows und Android: Texterkennung Tesseract (ocr.js)
   window.BOGEY_MAC = !win;
-  window.BOGEY_WINDOWS = win;
-  window.BOGEY_SCAN_HINT = win
+  window.BOGEY_WINDOWS = platform === "windows";
+  window.BOGEY_ANDROID = android;
+  window.BOGEY_SCAN_HINT = android
+    ? "Fotografiere die ausgefüllte Karte möglichst flach und vollständig oder wähle ein PDF, z. B. aus einer Golf-App. Die Texterkennung läuft direkt auf deinem Handy – ohne Internet – und liest Par, Lochvorgaben und Schlagzeilen. Gedruckte Karten und PDFs klappen am besten, Handschrift oft nicht: prüfe danach alles in der Karte."
+    : win
     ? "Fotografiere die ausgefüllte Karte möglichst flach und vollständig oder wähle ein PDF, z. B. aus einer Golf-App. Die Texterkennung läuft direkt auf deinem PC – ohne Internet – und liest Par, Lochvorgaben und Schlagzeilen. Gedruckte Karten und PDFs klappen am besten, Handschrift oft nicht: prüfe danach alles in der Karte."
     : "Fotografiere die ausgefüllte Karte möglichst flach und vollständig oder wähle ein PDF, z. B. aus einer Golf-App. Apples Texterkennung liest Par, Lochvorgaben und Schlagzeilen direkt auf deinem Mac – ohne Internet. Gedruckte Karten und PDFs klappen am besten, Handschrift nicht immer: prüfe danach alles in der Karte.";
   window.BOGEY_SCAN_BUSY = win
@@ -16,7 +30,8 @@
     script: "vendor/tesseract/tesseract.min.js",
     workerPath: new URL("vendor/tesseract/worker.min.js", location.href).href,
     corePath: new URL("vendor/tesseract/core/", location.href).href,
-    langPath: new URL("vendor/tesseract/lang/", location.href).href
+    langPath: new URL("vendor/tesseract/lang/", location.href).href,
+    gzip: !android   // Android packt .gz-Dateien beim Bauen aus – dort liegt deu.traineddata entpackt bei
   };
   const bridge = win ? window.bogeyNative : window.webkit?.messageHandlers?.bogey;
   const call = (cmd, args = {}) => bridge.postMessage({ cmd, ...args }).then(r => {

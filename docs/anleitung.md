@@ -1,7 +1,7 @@
 ---
 title: Anleitung
 permalink: /anleitung/
-lead: Installieren, Daten umziehen und Scorekarten einlesen – für Mac, Windows, iPhone und Web.
+lead: Installieren, Daten umziehen und Scorekarten einlesen – für Mac, Windows, Android, iPhone und Web.
 ---
 
 ## Mac {#mac}
@@ -35,6 +35,14 @@ Installiert die neueste Version ohne Administratorrechte, mit Verknüpfung im St
 3. Daten liegen unter `%APPDATA%\Bogey Club` – Menü **Datei → Datenordner öffnen**.
 
 Selbst bauen (Node nötig): `npm run windows` → `windows/dist/`.
+
+## Android {#android}
+
+1. Auf dem Handy **Bogey-Club-android-&lt;Version&gt;.apk** aus den [Downloads](https://github.com/{{ site.repository }}/releases) laden und öffnen.
+2. Beim ersten Mal fragt Android, ob der Browser Apps installieren darf: **Einstellungen → Unbekannte Apps installieren → Zulassen**, dann **Installieren**.
+3. Daten liegen auf dem Handy in der App. Zum Umziehen: **Spieler → Daten-Backup**.
+
+Neue Versionen meldet die App von selbst – **Herunterladen** tippen und die APK wieder öffnen; die Daten bleiben.
 
 ## iPhone {#iphone}
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.BogeyClub" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:colorPrimary">@color/club_green</item>
+        <item name="android:colorAccent">@color/club_green</item>
+    </style>
+    <color name="background">#EEF3EF</color>
+    <color name="club_green">#1C6641</color>
+</resources>

@@ -1,0 +1,10 @@
+{
+  "name": "bogeyclub-android",
+  "private": true,
+  "description": "Bausteine für die Android-App: Texterkennung (Tesseract), wird in die App kopiert (mac/prepare-web.mjs --target android)",
+  "devDependencies": {
+    "@tesseract.js-data/deu": "1.0.0",
+    "tesseract.js": "5.1.1"
+  },
+  "license": "SEE LICENSE IN ../LICENSE"
+}

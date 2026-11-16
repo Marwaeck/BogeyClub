@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Alles auf einmal: speichern (commit), hochladen (push) und eine neue Version veröffentlichen. Das Skript legt
-# den Tag „v<Version>“ an; GitHub Actions (.github/workflows/build.yml) baut daraufhin Mac- und Windows-App und
+# den Tag „v<Version>“ an; GitHub Actions (.github/workflows/build.yml) baut daraufhin Mac-, Windows- und Android-App und
 # legt das GitHub-Release mit beiden ZIP-Dateien an – die Updater in den Apps finden sie dort.
 #
 #   npm run release                         → nächste kleine Version (1.0.0 → 1.0.1), fragt nach den Neuerungen
@@ -9,12 +9,11 @@
 #   npm run release -- --probe              → nur anzeigen, was passieren würde (ändert nichts)
 #
 # Die allererste Veröffentlichung nimmt die Version aus package.json, wie sie ist (1.0.0).
+# Nur Änderungen hochladen, ohne neue Version: scripts/upload.sh (npm run upload).
 # Braucht: Git mit Zugriff auf GitHub, die GitHub-CLI „gh“ (angemeldet: gh auth login) und Node.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-
-say() { print -r -- "→ $*"; }
-fail() { print -r -- "✗ $*" >&2; exit 1; }
+source scripts/git-common.sh
 
 PROBE=0; BUMP="patch"; NOTES=""
 for a in "$@"; do
@@ -25,9 +24,11 @@ for a in "$@"; do
   esac
 done
 
-command -v gh >/dev/null || fail "Die GitHub-CLI „gh“ fehlt: brew install gh, dann gh auth login."
-gh auth status >/dev/null 2>&1 || fail "Bei GitHub nicht angemeldet: gh auth login"
-[[ "$(git rev-parse --abbrev-ref HEAD)" == "main" ]] || fail "Bitte auf dem Zweig „main“ arbeiten."
+require_git
+require_gh
+gh secret list 2>/dev/null | grep -q '^ANDROID_KEYSTORE_BASE64' \
+  || say "Hinweis: Noch kein Android-Schlüssel bei GitHub (einmalig: npm run android-key). Ohne ihn lässt sich die APK nicht über eine ältere installieren."
+if [[ $PROBE -eq 1 ]]; then check_github; else sync_with_github; fi
 
 # ---- Version bestimmen ----
 CURRENT="$(node -p "require('./package.json').version")"
@@ -55,8 +56,9 @@ fi
 if [[ $PROBE -eq 1 ]]; then
   say "Probelauf – es wird nichts verändert."
   say "Version: ${CURRENT} → ${VERSION} (Release ${TAG}, letztes Release: ${LATEST_TAG:-keins})"
-  say "Würde speichern und hochladen:"; git status --short | sed 's/^/    /'
-  say "Würde Tag ${TAG} hochladen – GitHub baut dann Bogey-Club-mac-${VERSION}.zip und Bogey-Club-windows-${VERSION}.zip"
+  (( BEHIND > 0 )) && say "Würde zuerst ${BEHIND} neuere Speicherung(en) von GitHub übernehmen."
+  say "Würde speichern und hochladen:"; pending_changes | sed 's/^/    /'
+  say "Würde Tag ${TAG} hochladen – GitHub baut dann Bogey-Club-mac-${VERSION}.zip, Bogey-Club-windows-${VERSION}.zip und Bogey-Club-android-${VERSION}.apk"
   say "Neuerungen: ${NOTES}"
   exit 0
 fi
@@ -72,14 +74,17 @@ node -e '
 npm run build --silent >/dev/null                        # Web-Version (public/) auf den aktuellen Stand bringen
 
 say "Speichern (commit)"
-git add -A
+stage_all
 if ! git diff --cached --quiet; then git commit -q -m "Bogey Club ${VERSION}" -m "$NOTES"; fi
 git tag -a "$TAG" -m "$NOTES"
 say "Hochladen (push) – mit Tag ${TAG}"
-git push -q --atomic origin main "$TAG"
+if ! git push -q --atomic origin main "$TAG"; then
+  git tag -d "$TAG" >/dev/null
+  fail "Hochladen hat nicht geklappt. Die Speicherung bleibt hier erhalten – einfach noch einmal starten."
+fi
 
 # ---- 2. Bauen und veröffentlichen übernimmt GitHub Actions ----
 RUN_URL="https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions"
-print -r -- "✓ Bogey Club ${VERSION} ist hochgeladen. GitHub baut jetzt Mac- und Windows-App und veröffentlicht"
+print -r -- "✓ Bogey Club ${VERSION} ist hochgeladen. GitHub baut jetzt Mac-, Windows- und Android-App und veröffentlicht"
 print -r -- "  das Release ${TAG} (dauert etwa 10 Minuten): ${RUN_URL}"
 print -r -- "  Mitverfolgen im Terminal: gh run watch"

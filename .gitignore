@@ -15,3 +15,9 @@ docs/_site/
 docs/.jekyll-cache/
 docs/Gemfile.lock
 docs/vendor/
+
+# Android
+android/.gradle/
+android/local.properties
+android/dist/
+android/.kotlin/

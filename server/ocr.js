@@ -222,7 +222,7 @@
   function getWorker() {
     // Die Windows-App liefert alles mit (window.BOGEY_OCR_PATHS) und braucht dann kein Internet
     const P = window.BOGEY_OCR_PATHS || {};
-    const opts = P.workerPath ? { workerPath: P.workerPath, corePath: P.corePath, langPath: P.langPath, workerBlobURL: false } : {};
+    const opts = P.workerPath ? { workerPath: P.workerPath, corePath: P.corePath, langPath: P.langPath, workerBlobURL: false, gzip: P.gzip !== false } : {};
     workerPromise ??= (window.Tesseract ? Promise.resolve() : loadScript(P.script || TESSERACT))
       .then(() => window.Tesseract.createWorker("deu", 1, opts))
       .catch(e => { workerPromise = null; throw e; });

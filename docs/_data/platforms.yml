@@ -6,6 +6,10 @@
   text: Für Windows 10 und 11 (64 Bit). ZIP entpacken, „Bogey Club.exe“ starten – keine Installation nötig. Updates per Klick.
   file: Bogey-Club-windows-<Version>.zip
   anchor: windows
+- name: Android
+  text: Für Android 8 oder neuer. APK aufs Handy laden und installieren. Daten auf dem Handy, Foto-Einlesen offline, Hinweis auf Updates.
+  file: Bogey-Club-android-<Version>.apk
+  anchor: android
 - name: iPhone
   text: SwiftUI-App mit Dokumentenscanner. Aus dem Projekt in Xcode auf das eigene iPhone installieren.
   file: Xcode-Projekt
