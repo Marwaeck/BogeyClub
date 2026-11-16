@@ -1,0 +1,127 @@
+# Automatische Builds für Bogey Club.
+#
+# - Jeder Push auf main und jeder Pull Request: Web-Version bauen, Tests laufen lassen, Mac- und Windows-App bauen.
+#   Die fertigen ZIP-Dateien liegen danach 14 Tage lang unter „Actions“ → Lauf → „Artifacts“.
+# - Ein Tag „v1.2.3“ (legt `npm run release` an): zusätzlich das GitHub-Release mit beiden ZIP-Dateien
+#   veröffentlichen. Die Neuerungen kommen aus der Tag-Nachricht. Die Updater in den Apps finden es dort.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  web:
+    name: Web-Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: public/ bauen
+        run: node build.mjs
+      - name: Worker-Syntax prüfen
+        run: node --check server/worker.js
+
+  mac:
+    name: Mac-App
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests Scorekarten-Erkennung (BogeyScan)
+        working-directory: BogeyScan
+        run: swift test
+      - name: Tests Datenablage (mac)
+        working-directory: mac
+        run: swift test
+      - name: App bauen
+        run: zsh mac/build.sh
+      - name: Version bestimmen
+        id: v
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: mac/build/Bogey-Club-mac-${{ steps.v.outputs.version }}.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows-App
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: windows/package-lock.json
+      - name: Abhängigkeiten installieren
+        run: npm ci --no-audit --no-fund
+      - name: Tests
+        run: npm test
+      - name: App bauen
+        run: npm run dist
+      - name: Version bestimmen
+        id: v
+        shell: bash
+        run: echo "version=$(node -p "require('../package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: windows/dist/Bogey-Club-windows-${{ steps.v.outputs.version }}.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Veröffentlichen
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [web, mac, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag gegen package.json prüfen
+        id: v
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          [ "v$VERSION" = "$GITHUB_REF_NAME" ] || { echo "::error::Tag $GITHUB_REF_NAME passt nicht zu package.json ($VERSION)"; exit 1; }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Neuerungen aus der Tag-Nachricht
+        run: |
+          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+          NOTES="$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME" | sed '/-----BEGIN PGP SIGNATURE-----/,$d')"
+          [ -n "$NOTES" ] || NOTES="Bogey Club ${{ steps.v.outputs.version }}"
+          printf '%s\n' "$NOTES" > notes.md
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: GitHub-Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "Bogey Club ${{ steps.v.outputs.version }}" \
+            --notes-file notes.md \
+            --verify-tag

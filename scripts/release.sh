@@ -1,6 +1,7 @@
 #!/bin/zsh
-# Alles auf einmal: speichern (commit), hochladen (push) und eine neue Version veröffentlichen (GitHub-Release
-# mit Mac- und Windows-App – die Updater in den Apps finden sie dort).
+# Alles auf einmal: speichern (commit), hochladen (push) und eine neue Version veröffentlichen. Das Skript legt
+# den Tag „v<Version>“ an; GitHub Actions (.github/workflows/build.yml) baut daraufhin Mac- und Windows-App und
+# legt das GitHub-Release mit beiden ZIP-Dateien an – die Updater in den Apps finden sie dort.
 #
 #   npm run release                         → nächste kleine Version (1.0.0 → 1.0.1), fragt nach den Neuerungen
 #   npm run release -- minor "Neu: …"       → 1.0.x → 1.1.0, Neuerungen direkt angeben
@@ -8,7 +9,7 @@
 #   npm run release -- --probe              → nur anzeigen, was passieren würde (ändert nichts)
 #
 # Die allererste Veröffentlichung nimmt die Version aus package.json, wie sie ist (1.0.0).
-# Braucht: Git mit Zugriff auf GitHub, die GitHub-CLI „gh“ (angemeldet: gh auth login), Xcode und Node.
+# Braucht: Git mit Zugriff auf GitHub, die GitHub-CLI „gh“ (angemeldet: gh auth login) und Node.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -43,6 +44,7 @@ else
 fi
 TAG="v${VERSION}"
 gh release view "$TAG" >/dev/null 2>&1 && fail "Version ${VERSION} ist schon veröffentlicht."
+git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1 && fail "Tag ${TAG} gibt es schon auf GitHub."
 
 if [[ -z "$NOTES" && $PROBE -eq 0 ]]; then
   print -r -- "Was ist neu in Bogey Club ${VERSION}? (eine Zeile pro Punkt, zum Abschließen eine leere Zeile)"
@@ -54,7 +56,7 @@ if [[ $PROBE -eq 1 ]]; then
   say "Probelauf – es wird nichts verändert."
   say "Version: ${CURRENT} → ${VERSION} (Release ${TAG}, letztes Release: ${LATEST_TAG:-keins})"
   say "Würde speichern und hochladen:"; git status --short | sed 's/^/    /'
-  say "Würde bauen: mac/build/Bogey-Club-mac-${VERSION}.zip und windows/dist/Bogey-Club-windows-${VERSION}.zip"
+  say "Würde Tag ${TAG} hochladen – GitHub baut dann Bogey-Club-mac-${VERSION}.zip und Bogey-Club-windows-${VERSION}.zip"
   say "Neuerungen: ${NOTES}"
   exit 0
 fi
@@ -72,19 +74,12 @@ npm run build --silent >/dev/null                        # Web-Version (public/)
 say "Speichern (commit)"
 git add -A
 if ! git diff --cached --quiet; then git commit -q -m "Bogey Club ${VERSION}" -m "$NOTES"; fi
-say "Hochladen (push)"
-git push -q origin main
+git tag -a "$TAG" -m "$NOTES"
+say "Hochladen (push) – mit Tag ${TAG}"
+git push -q --atomic origin main "$TAG"
 
-# ---- 2. Apps bauen ----
-say "Mac-App bauen";     ./mac/build.sh
-say "Windows-App bauen"; npm --prefix windows install --no-audit --no-fund --silent && npm --prefix windows run dist --silent
-
-# ---- 3. Veröffentlichen ----
-say "Veröffentlichen (GitHub-Release ${TAG})"
-gh release create "$TAG" \
-  "mac/build/Bogey-Club-mac-${VERSION}.zip" \
-  "windows/dist/Bogey-Club-windows-${VERSION}.zip" \
-  --title "Bogey Club ${VERSION}" --notes "$NOTES" --target "$(git rev-parse HEAD)"
-
-print -r -- "✓ Bogey Club ${VERSION} ist hochgeladen und veröffentlicht."
-print -r -- "  Die Apps bieten das Update beim nächsten Start an; neu installieren geht mit den Befehlen in der README."
+# ---- 2. Bauen und veröffentlichen übernimmt GitHub Actions ----
+RUN_URL="https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions"
+print -r -- "✓ Bogey Club ${VERSION} ist hochgeladen. GitHub baut jetzt Mac- und Windows-App und veröffentlicht"
+print -r -- "  das Release ${TAG} (dauert etwa 10 Minuten): ${RUN_URL}"
+print -r -- "  Mitverfolgen im Terminal: gh run watch"
