@@ -113,6 +113,7 @@ final class ReaderTests: XCTestCase {
         XCTAssertEqual(r.par, [4, 5, 3, 4, 4, 3, 5, 4, 4])
         XCTAssertEqual(r.strokeIndex, [7, 1, 15, 9, 3, 17, 5, 11, 13])
         XCTAssertEqual(r.players.map(\.name), ["Julia", "Peter"])
+        guard r.players.count == 2 else { return }
         XCTAssertEqual(r.players[0].strokes, [5, 6, 4, 0, 5, 4, 6, 5, 5])
         XCTAssertEqual(r.players[1].strokes, [4, 5, 3, 5, 4, 3, 6, 4, 5])
     }
