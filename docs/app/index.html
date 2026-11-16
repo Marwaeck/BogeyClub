@@ -7,13 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Bogey Club">
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" type="image/png" href="/icons/icon-192.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Bogey Club</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="lib/fonts/fonts.css">
 <style>
 /* Layout: eine Spalte wie ein Scorekarten-Block – Kopf, Reiter, darunter Karten-Raster mit klassischen Symbolen (Kreis = Birdie, Quadrat = Bogey) */
 :root {
@@ -315,7 +313,7 @@ table.card thead tr > :first-child { background: var(--soft); }
 </div>
 <div id="toast" hidden></div>
 
-<script src="/runtime.js"></script>
+<script src="runtime.js"></script>
 <script>
 // ---------- Hilfen ----------
 const $ = (s, r = document) => r.querySelector(s);
@@ -665,8 +663,8 @@ function reviewHTML() {
 }
 
 // PDF-Export (jsPDF + AutoTable, werden erst beim Klick geladen)
-const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-const AUTOTABLE = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js";
+const JSPDF = "lib/jspdf.umd.min.js";
+const AUTOTABLE = "lib/jspdf.plugin.autotable.min.js";
 let pdfLoad = null;
 function loadPdfLibs() {
   pdfLoad ??= loadScript(JSPDF).then(() => loadScript(AUTOTABLE)).catch(e => { pdfLoad = null; throw e; });
@@ -1121,7 +1119,7 @@ const scKind = (s, par) => !s ? null : s - par <= -2 ? "eagle" : s - par === -1 
 const MAP_LIGHT = { "--m-bg": "#e4eedf", "--m-rough": "#cfe3c4", "--m-rough2": "#c3dbb6", "--m-wood": "#8fb487", "--m-range": "#d6e8c9", "--m-fairway": "#86c47c", "--m-water": "#9fd0ec", "--m-water-s": "#6aaed6", "--m-tee": "#a6d79b", "--m-green": "#5fb86a", "--m-green-s": "#2f8a43", "--m-sand": "#f1e6bf", "--m-sand-s": "#d4c38c", "--m-house": "#c9bfae" };
 async function courseImageJpeg(c, W = 640, H = 360, zoom = 0.94) {
   let src = null, revoke = null;
-  if (c.photo) src = `/_blob/${c.photo}`;
+  if (c.photo) src = `_blob/${c.photo}`;
   else if (mapOf(c)) {
     const m = mapOf(c);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${m.w} ${m.h}" width="${W * 2}" height="${Math.round(W * 2 * m.h / m.w)}"><rect width="${m.w}" height="${m.h}" style="fill:var(--m-bg)"/>${featuresSVG(m)}</svg>`
@@ -1359,7 +1357,7 @@ function avatar(p, size = 28, photoOverride) {
   const photo = photoOverride !== undefined ? photoOverride : p.photo;
   const style = `--av:${size}px;--avc:${avColor(p.id || p.name)}`;
   return photo
-    ? `<span class="av" style="${style}"><img src="/_blob/${esc(photo)}" alt="" loading="lazy" onerror="this.remove()"></span>`
+    ? `<span class="av" style="${style}"><img src="_blob/${esc(photo)}" alt="" loading="lazy" onerror="this.remove()"></span>`
     : `<span class="av" style="${style}" aria-hidden="true">${esc(initials(p.name))}</span>`;
 }
 const who = (pid, size = 26, bold = true) => { const p = playerById(pid); return `<span class="who">${avatar(p || { id: pid, name: pName(pid) }, size)}${bold ? `<b>${esc(pName(pid))}</b>` : `<span class="nm">${esc(pName(pid))}</span>`}</span>`; };
@@ -1389,7 +1387,7 @@ async function initStore() {
   try { handle = window.claude?.use ? await claude.use("db") : null; } catch (e) { handle = null; }
   if (handle) {
     db = handle; mode = "db";
-    $("#mode").textContent = window.BOGEY_HOSTED ? "Gemeinsam gespeichert" : "Gespeichert in deinem Claude-Konto";
+    $("#mode").textContent = window.BOGEY_BROWSER ? "Gespeichert in diesem Browser" : "Gespeichert in deinem Claude-Konto";
     let pending = new Set(COLLS);
     COLLS.forEach(c => db.collection(c).onSnapshot(snap => {
       S[c] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1659,7 +1657,7 @@ async function prepareImage(file) {
 }
 
 // ---------- PDF (pdf.js, wird erst bei Bedarf geladen) ----------
-const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+const PDFJS = "lib/pdfjs/";
 let pdfLibPromise = null;
 function loadScript(src) {
   return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
@@ -2099,7 +2097,7 @@ async function roundCardBlob(d) {
     const R = 54 * sc, ax = 48 + R;
     g.save(); g.beginPath(); g.arc(ax, cy, R, 0, Math.PI * 2); g.closePath();
     let drawn = false;
-    if (x.p.photo) { try { const pi = await loadImg(`/_blob/${x.p.photo}`); g.clip(); g.drawImage(pi, ax - R, cy - R, 2 * R, 2 * R); drawn = true; } catch (e) { } }
+    if (x.p.photo) { try { const pi = await loadImg(`_blob/${x.p.photo}`); g.clip(); g.drawImage(pi, ax - R, cy - R, 2 * R, 2 * R); drawn = true; } catch (e) { } }
     if (!drawn) {
       let hsh = 0; for (const ch of String(x.p.id)) hsh = (hsh * 31 + ch.charCodeAt(0)) >>> 0;
       g.fillStyle = CARD_C.av[hsh % CARD_C.av.length]; g.fill();
@@ -2185,7 +2183,7 @@ function backupHTML() {
 }
 // Bilder (Spieler, Luftbilder) als data:-URLs mitsichern, damit ein Umzug auf einen anderen Server sie mitnimmt
 async function blobDataUrl(id) {
-  try { const b = await (await fetch(`/_blob/${id}`)).blob(); if (!b.size || !/^image\//.test(b.type)) return null;
+  try { const b = await (await fetch(`_blob/${id}`)).blob(); if (!b.size || !/^image\//.test(b.type)) return null;
     return await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = no; fr.readAsDataURL(b); }); }
   catch (e) { return null; }
 }
@@ -2234,7 +2232,7 @@ async function applyBackup() {
     const remap = {};
     for (const [id, url] of b.I || []) {
       if (!assetsApi) break;
-      try { const r = await fetch(`/_blob/${id}`, { method: "HEAD" }); if (r.ok) continue; } catch (e) { }
+      try { const r = await fetch(`_blob/${id}`, { method: "HEAD" }); if (r.ok) continue; } catch (e) { }
       try { const res = await assetsApi.upload(await (await fetch(url)).blob()); remap[id] = res.id; } catch (e) { }
     }
     const fix = x => remap[x.photo] ? { ...x, photo: remap[x.photo] } : x;
@@ -2393,7 +2391,7 @@ function refreshDots() {
 // ---------- Platzbilder (Luftbild) ----------
 const courseQuery = c => String(c.name || "").replace(/\s*\((gelb|weiß|weiss|rot|blau|schwarz)\)\s*$/i, "").replace(/\s*\(9 Loch\)\s*$/i, "").trim();
 const mapLinks = c => { const q = encodeURIComponent(courseQuery(c)); return `<div class="maplinks"><a class="btn ghost" href="https://maps.apple.com/?q=${q}&t=k" target="_blank" rel="noopener">Satellit in Apple Karten</a><a class="btn ghost" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Google Maps</a></div>`; };
-const aerialImg = (id, alt = "") => id ? `<img src="/_blob/${esc(id)}" alt="${esc(alt)}" loading="lazy" onerror="this.parentNode.textContent='Bild nicht verfügbar'">` : "";
+const aerialImg = (id, alt = "") => id ? `<img src="_blob/${esc(id)}" alt="${esc(alt)}" loading="lazy" onerror="this.parentNode.textContent='Bild nicht verfügbar'">` : "";
 // Querformat 16:9 zuschneiden, max. 1600 px breit
 async function landscapeJpeg(file) {
   const bmp = await createImageBitmap(file);

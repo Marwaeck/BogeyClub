@@ -1,65 +1,119 @@
-// Bogey Club – Laufzeit für das selbst gehostete Bogey Club (Cloudflare Worker).
-// Bildet die Teile von window.claude nach, die die App nutzt: db, assets, downloads.
-// "sample" (Scorekarte lesen) übernimmt hier die Texterkennung im Browser (ocr.js mit Tesseract.js) statt Claude.
+// Bogey Club – Laufzeit für die Web-App im Browser (GitHub Pages, ohne Server).
+// Bildet die Teile von window.claude nach, die die App nutzt: db und assets (im Browser gespeichert, IndexedDB),
+// downloads (normaler Browser-Download) und sample (Scorekarte lesen mit ocr.js / Tesseract.js im Browser).
+// Bilder liefert der Service Worker (sw.js) unter _blob/<id> aus derselben Datenbank aus.
 (() => {
   if (window.claude?.use) return;           // in Claude läuft die echte Laufzeit
-  window.BOGEY_HOSTED = true;
-  const POLL_MS = 20000;
+  window.BOGEY_BROWSER = true;
 
-  async function api(path, opts = {}) {
-    const r = await fetch(path, { credentials: "same-origin", ...opts });
-    if (r.status === 401 || r.status === 403) { const e = new Error("not_granted"); e.code = "not_granted"; throw e; }
-    if (!r.ok) { const e = new Error(`HTTP ${r.status}`); e.code = (await r.json().catch(() => ({}))).code || "error"; throw e; }
-    return r.status === 204 ? null : r.json();
+  // ---- IndexedDB: „docs“ (Schlüssel „coll/id“) und „blobs“ (Bilder) – dieselbe Datenbank nutzt sw.js ----
+  const DB_NAME = "bogeyclub", DB_VERSION = 1;
+  const openDB = () => new Promise((ok, no) => {
+    const r = indexedDB.open(DB_NAME, DB_VERSION);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains("docs")) d.createObjectStore("docs");
+      if (!d.objectStoreNames.contains("blobs")) d.createObjectStore("blobs");
+    };
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => no(r.error);
+  });
+  const idb = openDB();
+  async function tx(store, mode, fn) {
+    const d = await idb;
+    return new Promise((ok, no) => {
+      const t = d.transaction(store, mode), s = t.objectStore(store);
+      let result;
+      Promise.resolve(fn(s)).then(r => { result = r; });
+      t.oncomplete = () => ok(result);
+      t.onerror = t.onabort = () => { const e = new Error(t.error?.name === "QuotaExceededError" ? "too_large" : "error"); e.code = e.message; no(e); };
+    });
   }
+  const req = r => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
 
-  // ---- Datenbank: Collections mit Dokumenten, Änderungen per Polling ----
-  const listeners = new Map();   // coll -> Set({ok, err})
-  const lastJson = new Map();
-  async function refresh(coll) {
-    const set = listeners.get(coll); if (!set?.size) return;
-    try {
-      const docs = await api(`/api/db/${encodeURIComponent(coll)}`);
-      const json = JSON.stringify(docs);
-      if (json === lastJson.get(coll)) return;
-      lastJson.set(coll, json);
-      const snap = { docs: docs.map(d => ({ id: d.id, data: () => d.data })) };
-      set.forEach(l => { try { l.ok(snap); } catch (e) { console.error(e); } });
-    } catch (e) { set.forEach(l => l.err && l.err(e)); }
+  // Browser bitten, die Daten nicht von selbst zu löschen, wenn der Speicher knapp wird
+  navigator.storage?.persist?.().catch(() => { });
+
+  // Service Worker: Bilder (_blob/…) und Offline-Betrieb
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("Service Worker:", e));
+
+  // ---- Datenbank: alles einmal laden, Änderungen sofort an alle Listener (auch in anderen Tabs) ----
+  let data = {};   // { coll: { id: docData } }
+  const listeners = new Map();   // coll -> Set(fn)
+  const snapshot = coll => ({ docs: Object.entries(data[coll] || {}).map(([id, d]) => ({ id, data: () => JSON.parse(JSON.stringify(d)) })) });
+  const notify = coll => (listeners.get(coll) || []).forEach(fn => { try { fn(snapshot(coll)); } catch (e) { console.error(e); } });
+  async function loadAll() {
+    const all = {};
+    await tx("docs", "readonly", s => new Promise((ok, no) => {
+      const c = s.openCursor();
+      c.onsuccess = () => {
+        const cur = c.result;
+        if (!cur) return ok();
+        const k = String(cur.key), i = k.indexOf("/");
+        (all[k.slice(0, i)] ??= {})[k.slice(i + 1)] = cur.value;
+        cur.continue();
+      };
+      c.onerror = () => no(c.error);
+    }));
+    data = all;
+    return all;
   }
-  const refreshAll = () => [...listeners.keys()].forEach(refresh);
-  setInterval(() => { if (document.visibilityState === "visible") refreshAll(); }, POLL_MS);
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshAll(); });
+  let loaded = loadAll();
+  const channel = "BroadcastChannel" in window ? new BroadcastChannel("bogeyclub") : null;
+  if (channel) channel.onmessage = e => {
+    loaded = loadAll().then(d => { if (e.data?.coll) notify(e.data.coll); else listeners.forEach((_, c) => notify(c)); return d; });
+  };
 
   const db = {
     collection(coll) {
       return {
         onSnapshot(ok, err) {
           if (!listeners.has(coll)) listeners.set(coll, new Set());
-          const l = { ok, err }; listeners.get(coll).add(l);
-          lastJson.delete(coll); refresh(coll);
-          return () => listeners.get(coll).delete(l);
+          listeners.get(coll).add(ok);
+          loaded.then(() => ok(snapshot(coll)), e => err && err(e));
+          return () => listeners.get(coll).delete(ok);
         },
         doc(id) {
-          const url = `/api/db/${encodeURIComponent(coll)}/${encodeURIComponent(id)}`;
+          const key = `${coll}/${id}`;
           return {
-            async set(data) { await api(url, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(data) }); lastJson.delete(coll); refresh(coll); },
-            async delete() { await api(url, { method: "DELETE" }); lastJson.delete(coll); refresh(coll); },
-            async get() { const d = await api(url).catch(() => null); return { id, exists: !!d, data: () => d?.data }; }
+            async set(doc) {
+              await loaded;
+              const clean = JSON.parse(JSON.stringify(doc));
+              await tx("docs", "readwrite", s => { s.put(clean, key); });
+              (data[coll] ??= {})[id] = clean; notify(coll);
+              channel?.postMessage({ coll });
+            },
+            async delete() {
+              await loaded;
+              await tx("docs", "readwrite", s => { s.delete(key); });
+              if (data[coll]) delete data[coll][id];
+              notify(coll);
+              channel?.postMessage({ coll });
+            },
+            async get() {
+              await loaded;
+              const d = data[coll]?.[id];
+              return { id, exists: !!d, data: () => d && JSON.parse(JSON.stringify(d)) };
+            }
           };
         }
       };
     }
   };
 
-  // ---- Bilder (R2) ----
+  // ---- Bilder: in IndexedDB, ausgeliefert vom Service Worker unter _blob/<id> ----
+  const newId = () => [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, "0")).join("");
   const assets = {
     async upload(blob) {
       if (blob.size > 8 * 1024 * 1024) { const e = new Error("too_large"); e.code = "too_large"; throw e; }
       if (!/^image\/(jpeg|png|webp|gif)$/.test(blob.type)) { const e = new Error("unsupported_type"); e.code = "unsupported_type"; throw e; }
-      return api("/api/assets", { method: "POST", headers: { "content-type": blob.type }, body: blob });
+      const id = newId();
+      // Als ArrayBuffer speichern – Blobs in IndexedDB machen in manchen Safari-Versionen Probleme
+      const buf = await blob.arrayBuffer();
+      await tx("blobs", "readwrite", s => { s.put({ type: blob.type, data: buf }, id); });
+      return { id, url: `_blob/${id}` };
     },
-    async delete(id) { await api(`/api/assets/${encodeURIComponent(id)}`, { method: "DELETE" }); }
+    async delete(id) { await tx("blobs", "readwrite", s => { s.delete(String(id)); }); }
   };
 
   // ---- Downloads: normaler Browser-Download ----
@@ -80,7 +134,7 @@
   const sample = {
     async limits() { return { images: { maxCount: 3 } }; },
     async json(_prompt, opts = {}) {
-      ocrLoad ??= new Promise((res, rej) => { const s = document.createElement("script"); s.src = "/ocr.js"; s.onload = res; s.onerror = rej; document.head.appendChild(s); })
+      ocrLoad ??= new Promise((res, rej) => { const s = document.createElement("script"); s.src = "ocr.js"; s.onload = res; s.onerror = rej; document.head.appendChild(s); })
         .catch(e => { ocrLoad = null; throw e; });
       await ocrLoad;
       try { return await window.BogeyOCR.read(opts.images || []); }

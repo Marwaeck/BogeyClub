@@ -15,8 +15,8 @@ Privates Golf-Scorebuch: Scorekarten erfassen (Foto, PDF oder TAG-Heuer-Link), m
 | `android/` | Android-App (WebView, Kotlin): dieselbe Oberfläche, Daten auf dem Handy, Scorekarten-Erkennung offline mit mitgelieferter Texterkennung (Tesseract). Die APK baut GitHub Actions. |
 | `ios/GolfScorebuch/` | iOS-App in SwiftUI + SwiftData, Scorekarten-Erkennung offline mit Apple Vision (über `BogeyScan`). In Xcode öffnen: `GolfScorebuch.xcodeproj`. |
 | `osm/` | Platzkarten aus OpenStreetMap: `fetch.sh` lädt die Rohdaten über Overpass, `osm2map.py` wandelt sie in kompakte Karten-JSON um, `render.js` zeichnet sie als SVG. |
-| `server/` | Cloudflare Worker (`worker.js`: API, Bilder, Zugangsprüfung), `runtime.js`, das im Browser die Claude-Laufzeit (Datenbank, Bilder, Downloads, Scorekarte lesen) ersetzt, und `ocr.js` – die Scorekarten-Erkennung im Browser. |
-| `public/` | Von `build.mjs` erzeugt: die ausgelieferte Web-App. Nicht von Hand ändern. |
+| `server/` | Bausteine der Web-App im Browser: `runtime.js` ersetzt die Claude-Laufzeit (Datenbank und Bilder im Browser, Downloads, Scorekarte lesen), `sw.js` (Service Worker: Bilder, Offline), `ocr.js` – die Scorekarten-Erkennung im Browser (auch in Windows- und Android-App), `icons/`. |
+| `docs/app/` | Von `build.mjs` erzeugt: die Web-App auf GitHub Pages. Nicht von Hand ändern. |
 | `docs/` | Website für GitHub Pages mit eigenem Jekyll-Theme (Farben, Schriften und Logo der App): Startseite, Funktionen, Downloads, Anleitung. Einschalten unter Settings → Pages → Branch `main`, Ordner `/docs`. |
 | `design/` | Frühere Icon-Entwürfe und das GitHub-Vorschaubild `social-card.png` (gezeichnet von `make-social-card.swift`; hochladen unter Settings → General → Social preview). |
 
@@ -61,17 +61,16 @@ Das Programm-Icon (Scorekarte mit Bogey-Kästchen, Bleistift, Golfball; Club-Far
 
 Die App danach in den Ordner „Programme“ ziehen. Sie ist nur lokal signiert; beim ersten Öffnen auf einem anderen Mac per Rechtsklick → „Öffnen“ starten.
 
-Umzug der Daten: in der Claude- oder Cloudflare-Version **Spieler → Daten-Backup → Backup herunterladen**, in der Mac-App **Backup einspielen**.
+Umzug der Daten: in der Claude-Version oder der Web-App **Spieler → Daten-Backup → Backup herunterladen**, in der Mac-App **Backup einspielen**.
 
-## Hosting auf Cloudflare
+## Web-App im Browser (GitHub Pages)
 
-Die Web-App läuft als ein Cloudflare Worker (`wrangler.jsonc`):
+Die Web-App läuft ohne Server als Teil der Website: **https://marwaeck.github.io/BogeyClub/app/**
 
-- **App:** `web/index.html` wird von `build.mjs` nach `public/` gebaut (mit `runtime.js`, App-Icon und Manifest für „Zum Home-Bildschirm“).
-- **Daten:** D1-Datenbank `bogeyclub` (Tabelle `docs`, eine Zeile je Spieler/Platz/Runde/Platzkarte; wird automatisch angelegt).
-- **Bilder:** R2-Bucket `bogeyclub-photos`, ausgeliefert unter `/_blob/<id>`.
-- **Zugang:** Cloudflare Access. Der Worker prüft bei jeder Anfrage das Access-Token gegen `ACCESS_TEAM` und `ACCESS_AUD`; sind die leer, bleibt die App geschlossen.
-- **Deploy:** Workers Builds, verbunden mit diesem Repo – jeder Push auf `main` wird veröffentlicht.
+- **App:** `npm run build` (`build.mjs`) baut `web/index.html` nach `docs/app/` – mit `server/runtime.js`, App-Icon, Manifest für „Zum Home-Bildschirm“, Schriften und PDF-Bibliotheken (aus `mac/vendor`). `docs/app/` wird mit hochgeladen; GitHub Pages veröffentlicht den Ordner `docs/` bei jedem Push auf `main`. `npm run upload` und `npm run release` bauen vorher automatisch neu.
+- **Daten und Bilder:** im jeweiligen Browser (IndexedDB) – jedes Gerät und jeder Browser hat seinen eigenen Stand, wie bei den Apps. Umzug und Sicherung über **Spieler → Daten-Backup**. Offene Tabs gleichen sich gegenseitig ab.
+- **Bilder und Offline:** Der Service Worker (`server/sw.js`) liefert Bilder unter `_blob/<id>` aus dem Browser-Speicher und hält die App-Dateien vor, damit sie auch ohne Internet startet.
+- **Kein Zugangsschutz nötig:** Die Seite enthält keine Daten – was eingetragen wird, verlässt den Browser nicht.
 
 ## Installieren mit einem Befehl
 
@@ -95,7 +94,7 @@ Skripte: `install/mac.sh`, `install/windows.ps1`. Voraussetzung: ein veröffentl
 - **Lizenz:** `LICENSE` – private Nutzung kostenlos, Quellcode und Gestaltung © Marwaeck, alle Rechte vorbehalten. Bausteine anderer: `THIRD-PARTY-NOTICES.md`, Lizenztexte in `licenses/`. Beides liegt in den Apps bei (Menü „Lizenz …“ / „Lizenzen der Bausteine …“).
 - **Updater:** beide Apps fragen einmal am Tag (und über „Nach Updates suchen …“) das neueste GitHub-Release ab. Gibt es eine höhere Version mit `Bogey-Club-mac-<Version>.zip` bzw. `Bogey-Club-windows-<Version>.zip`, bieten sie **Jetzt installieren** an: Mac prüft Bundle-ID, Version und Signatur, tauscht die App aus und startet neu; Windows entpackt die ZIP und kopiert sie nach dem Beenden über den App-Ordner. Daten bleiben unberührt. Logik und Tests: `mac/Sources/BogeyCore/UpdateCheck.swift`, `UpdateInstaller.swift`, `windows/updater.js`.
 - **Doppelklick auf Veröffentlichen.command** im Finder zeigt eine Auswahl: *Aktualisieren* (nur hochladen), *Neue Version* (kleiner oder größerer Schritt) oder *Probelauf*. Beide Wege holen zuerst neuere Änderungen von GitHub, und die Arbeitsdateien von Craft Anything (`craft.json`, `investigation.cany/` usw.) werden nie mit hochgeladen.
-- **Aktualisieren – ohne neue Version:** `npm run upload` (optional `-- "Was geändert wurde"`, `-- --probe` für einen Probelauf). Baut die Web-Version, speichert alles (commit) und lädt es hoch (push). Web-App (Cloudflare) und Website (GitHub Pages) aktualisieren sich dann von selbst; Mac- und Windows-App bekommen ein Update erst mit einer neuen Version.
+- **Aktualisieren – ohne neue Version:** `npm run upload` (optional `-- "Was geändert wurde"`, `-- --probe` für einen Probelauf). Baut die Web-Version, speichert alles (commit) und lädt es hoch (push). Website und Web-App (GitHub Pages) aktualisieren sich dann von selbst; Mac- und Windows-App bekommen ein Update erst mit einer neuen Version.
 - **Speichern, hochladen und veröffentlichen – ein Befehl:** `npm run release` im Projektordner. Erhöht die Version (1.0.0 → 1.0.1; `npm run release -- minor` bzw. `-- 2.0.0` für größere Sprünge), fragt nach den Neuerungen, speichert alles (commit) und lädt es mit dem Tag `v<Version>` hoch (push). Den Rest erledigt GitHub Actions: Mac-, Windows- und Android-App bauen und das GitHub-Release `v<Version>` mit beiden ZIP-Dateien und der APK anlegen (etwa 10 Minuten, mitverfolgen mit `gh run watch`). Das erste Mal wird 1.0.0 veröffentlicht. `npm run release -- --probe` zeigt nur, was passieren würde. Braucht die GitHub-CLI (`gh auth login`), aber kein Xcode.
 - **Automatische Builds:** `.github/workflows/build.yml` baut bei jedem Push auf `main` und bei jedem Pull Request die Web-Version, führt die Tests aus (BogeyScan, Mac-Datenablage, Windows) und baut Mac-, Windows- und Android-App. Die ZIP-Dateien und die APK liegen 14 Tage unter **Actions → Lauf → Artifacts**. Bei einem Tag `v<Version>` wird zusätzlich das Release veröffentlicht.
 
@@ -138,16 +137,8 @@ Selbst bauen (Node, JDK 17 und Android-SDK nötig): `npm run android` → `andro
 | Windows-App | Tesseract.js in `server/ocr.js`, mitgeliefert | ja |
 | Android-App | Tesseract.js in `server/ocr.js`, mitgeliefert | ja |
 | Web-App in Claude | Claude (KI) | nein |
-| Web-App gehostet (Browser) | Tesseract.js in `server/ocr.js` – Apples Vision gibt es im Browser nicht | Bild bleibt im Browser; das Erkennungsmodul (~5 MB) lädt beim ersten Mal von jsDelivr |
+| Web-App im Browser (GitHub Pages) | Tesseract.js in `server/ocr.js` – Apples Vision gibt es im Browser nicht | Bild bleibt im Browser; das Erkennungsmodul (~5 MB) lädt beim ersten Mal von jsDelivr |
 
 `server/ocr.js` ist eine Übertragung von `BogeyScan/Sources/BogeyScan/ScorecardParser.swift` nach JavaScript – Änderungen an der Auswertung bitte in beiden Dateien machen. Handschrift liest Tesseract deutlich schlechter als Apple Vision.
 
-Lokal testen:
-
-```bash
-npm install
-printf 'DEV_USER=ich@example.com\nACCESS_TEAM=dev\nACCESS_AUD=dev\n' > .dev.vars   # nur lokal: überspringt Access auf localhost
-npx wrangler dev
-```
-
-Umzug der Daten aus der Claude-Version: dort **Spieler → Daten-Backup → Backup herunterladen** (enthält auch die Bilder), in der gehosteten App **Backup einspielen**.
+Umzug der Daten aus der Claude-Version: dort **Spieler → Daten-Backup → Backup herunterladen** (enthält auch die Bilder), in der Web-App **Backup einspielen**.

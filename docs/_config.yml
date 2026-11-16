@@ -11,8 +11,8 @@ baseurl: "/BogeyClub"
 repository: Marwaeck/BogeyClub
 logo: /assets/img/logo.png
 
-# Optional: Adresse der gehosteten Web-App (Cloudflare). Leer lassen, dann wird kein Knopf gezeigt.
-webapp_url: ""
+# Adresse der Web-App (von build.mjs nach docs/app gebaut). Leer lassen, dann wird kein Knopf gezeigt.
+webapp_url: "/app/"
 
 markdown: kramdown
 kramdown:

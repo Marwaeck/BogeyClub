@@ -1,6 +1,6 @@
 // Erzeugt den Web-Teil der Mac-App (mac/build/web) bzw. mit „--target windows“ der Windows-App
 // (windows/build/web) und mit „--target android“ der Android-App (android/build/web) aus web/index.html – derselben Datei wie das
-// Claude-Artefakt und die Cloudflare-Version. Statt Claude kommt mac/runtime.js zum Einsatz,
+// Claude-Artefakt und die Web-App auf GitHub Pages. Statt Claude kommt mac/runtime.js zum Einsatz,
 // Bibliotheken und Schriften werden aus mac/vendor geladen, damit alles offline funktioniert.
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, rmSync, cpSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -33,10 +33,10 @@ if (app.includes("fonts.googleapis.com")) throw new Error("Google-Fonts-Verweis 
 app = app.replace(/const JSPDF = "[^"]*";/, 'const JSPDF = "vendor/jspdf.umd.min.js";');
 app = app.replace(/const AUTOTABLE = "[^"]*";/, 'const AUTOTABLE = "vendor/jspdf.plugin.autotable.min.js";');
 app = app.replace(/const PDFJS = "[^"]*";/, 'const PDFJS = "vendor/pdfjs/";');
-if (/cdnjs\.cloudflare\.com/.test(app)) throw new Error("CDN-Verweis nicht ersetzt");
+if (/cdnjs\./.test(app)) throw new Error("CDN-Verweis nicht ersetzt");
 
 // Texte, die auf Claude verweisen
-must('window.BOGEY_HOSTED ? "Gemeinsam gespeichert" : "Gespeichert in deinem Claude-Konto"', ANDROID ? '"Gespeichert auf diesem Handy"' : WINDOWS ? '"Gespeichert auf diesem PC"' : '"Gespeichert auf diesem Mac"');
+must('window.BOGEY_BROWSER ? "Gespeichert in diesem Browser" : "Gespeichert in deinem Claude-Konto"', ANDROID ? '"Gespeichert auf diesem Handy"' : WINDOWS ? '"Gespeichert auf diesem PC"' : '"Gespeichert auf diesem Mac"');
 soft("Du hast der Seite den Zugriff auf Claude nicht erlaubt. Trage die Werte direkt ein.", "Die Texterkennung ist nicht verfügbar. Trage die Werte direkt ein.");
 soft("Speichern ist in dieser Ansicht nicht möglich. Öffne die Seite in der Claude-App oder auf claude.ai.", "Speichern ist gerade nicht möglich.");
 

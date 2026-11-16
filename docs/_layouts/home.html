@@ -10,7 +10,7 @@ layout: default
       <p class="sub">{{ page.intro }}</p>
       <div class="actions">
         <a class="btn primary" href="#download">Herunterladen</a>
-        {% if site.webapp_url != "" %}<a class="btn" href="{{ site.webapp_url }}">Web-App öffnen</a>{% endif %}
+        {% if site.webapp_url != "" %}<a class="btn" href="{{ site.webapp_url | relative_url }}">Web-App öffnen</a>{% endif %}
         <a class="btn ghost" href="{{ '/anleitung/' | relative_url }}">Anleitung</a>
       </div>
     </div>

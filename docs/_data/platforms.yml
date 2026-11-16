@@ -15,6 +15,6 @@
   file: Xcode-Projekt
   anchor: iphone
 - name: Web
-  text: Läuft im Browser, gemeinsam für alle Mitspieler – gehostet auf Cloudflare mit Anmeldung.
-  file: Eigener Zugang
+  text: Läuft direkt im Browser, ohne Installation und ohne Anmeldung. Daten bleiben im Browser, auch offline nutzbar.
+  file: Im Browser, ohne Download
   anchor: web

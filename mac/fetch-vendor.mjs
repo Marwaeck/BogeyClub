@@ -6,12 +6,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "vendor");
-const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
+const CDN = "https://cdn.jsdelivr.net/npm/";   // dieselben Dateien wie in web/index.html, aus den npm-Paketen
 const FILES = {
-  "jspdf.umd.min.js": CDN + "jspdf/2.5.1/jspdf.umd.min.js",
-  "jspdf.plugin.autotable.min.js": CDN + "jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js",
-  "pdfjs/pdf.min.js": CDN + "pdf.js/3.11.174/pdf.min.js",
-  "pdfjs/pdf.worker.min.js": CDN + "pdf.js/3.11.174/pdf.worker.min.js",
+  "jspdf.umd.min.js": CDN + "jspdf@2.5.1/dist/jspdf.umd.min.js",
+  "jspdf.plugin.autotable.min.js": CDN + "jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js",
+  "pdfjs/pdf.min.js": CDN + "pdfjs-dist@3.11.174/build/pdf.min.js",
+  "pdfjs/pdf.worker.min.js": CDN + "pdfjs-dist@3.11.174/build/pdf.worker.min.js",
 };
 const FONTS = "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";

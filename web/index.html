@@ -1377,7 +1377,7 @@ async function initStore() {
   try { handle = window.claude?.use ? await claude.use("db") : null; } catch (e) { handle = null; }
   if (handle) {
     db = handle; mode = "db";
-    $("#mode").textContent = window.BOGEY_HOSTED ? "Gemeinsam gespeichert" : "Gespeichert in deinem Claude-Konto";
+    $("#mode").textContent = window.BOGEY_BROWSER ? "Gespeichert in diesem Browser" : "Gespeichert in deinem Claude-Konto";
     let pending = new Set(COLLS);
     COLLS.forEach(c => db.collection(c).onSnapshot(snap => {
       S[c] = snap.docs.map(d => ({ id: d.id, ...d.data() }));

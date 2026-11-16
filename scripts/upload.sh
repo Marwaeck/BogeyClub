@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Aktualisieren: alle Änderungen speichern (commit) und zu GitHub hochladen (push) – ohne neue App-Version.
-# Danach aktualisieren sich von selbst: die Web-App auf Cloudflare (Workers Builds) und die Website (GitHub Pages).
+# Danach aktualisiert sich die Website mit der Web-App (GitHub Pages, Ordner docs/) von selbst.
 # Mac- und Windows-App bekommen ein Update erst mit einer neuen Version (scripts/release.sh).
 #
 #   npm run upload                    → fragt, was geändert wurde

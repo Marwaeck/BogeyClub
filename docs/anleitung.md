@@ -50,7 +50,11 @@ Das Projekt `ios/GolfScorebuch/GolfScorebuch.xcodeproj` in Xcode öffnen, das ei
 
 ## Web {#web}
 
-Die Web-App läuft als Cloudflare Worker mit Datenbank und Bildspeicher; Zugang über Cloudflare Access. Einrichtung und lokales Testen stehen in der [README](https://github.com/{{ site.repository }}#hosting-auf-cloudflare).
+Die [Web-App]({{ "/app/" | relative_url }}) läuft direkt im Browser – ohne Installation, ohne Anmeldung, auf Wunsch über **Zum Home-Bildschirm** wie eine App.
+
+- Deine Daten bleiben **in diesem Browser** auf diesem Gerät; nichts wird hochgeladen. Ein anderes Gerät oder ein anderer Browser hat seinen eigenen Stand.
+- Sichern und umziehen über **Spieler → Daten-Backup**. Wer den Browserverlauf samt Website-Daten löscht, löscht auch die Bogey-Club-Daten – vorher ein Backup herunterladen.
+- Nach dem ersten Öffnen startet sie auch ohne Internet. Die Texterkennung lädt beim ersten Scannen einmalig etwa 5 MB.
 
 ## Updates, Version und Lizenz
 

@@ -30,10 +30,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: public/ bauen
+      - name: Web-App für GitHub Pages bauen (docs/app)
         run: node build.mjs
-      - name: Worker-Syntax prüfen
-        run: node --check server/worker.js
+      - name: Syntax prüfen
+        run: for f in server/runtime.js server/sw.js server/ocr.js docs/app/sw.js; do node --check "$f"; done
+      - name: Ist docs/app aktuell?
+        run: |
+          if [ -n "$(git status --porcelain -- docs/app)" ]; then
+            git status --short -- docs/app
+            echo "::error::docs/app ist veraltet – npm run build ausführen und hochladen"; exit 1
+          fi
 
   mac:
     name: Mac-App
