@@ -230,6 +230,80 @@ table.card select, table.card input.si { width: 38px; height: 30px; border: 1px 
   .map-row { grid-template-columns: 1fr; }
 }
 
+
+/* ---------- Unterseiten, Rundenliste, Runden-Ansicht ---------- */
+.subnav { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--soft); width: fit-content; max-width: 100%; overflow-x: auto; }
+.subnav button { border: 0; background: none; padding: 7px 16px; border-radius: 8px; font: 600 .95rem var(--font-body); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.subnav button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.filters .f { min-width: 140px; flex: 1 1 160px; }
+.filters .btn { flex: none; }
+h3.month { font-size: .95rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 6px 0 -4px; }
+.round .scores .win { color: var(--ink); }
+.crown { font-style: normal; color: var(--b-gold); margin-right: 3px; }
+.pb { font-style: normal; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 1px 6px; margin-left: 5px; vertical-align: 1px; }
+.panel.round-head { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.round-head p { margin: 4px 0 0; }
+.thumb.lg { width: 132px; height: 84px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); display: block; }
+.thumb.lg svg, .thumb.lg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.results { display: grid; gap: 10px; }
+.res { display: grid; grid-template-columns: 26px 40px 1fr auto; gap: 10px 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.res.win { border-color: var(--b-gold); box-shadow: inset 4px 0 0 var(--b-gold); }
+.res .pl { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--muted); text-align: center; }
+.res.win .pl { color: var(--b-gold); }
+.res .who { display: grid; gap: 2px; min-width: 0; }
+.res .who > b { font-size: 1.05rem; }
+.res .nums { display: flex; gap: 14px; text-align: center; }
+.res .nums div { display: grid; min-width: 44px; }
+.res .nums b { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.res .nums .main b { font-size: 1.9rem; color: var(--accent); }
+.res .nums span { font-size: .72rem; color: var(--muted); }
+.bchips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.bchip { font-size: .75rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.bchip.pb { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.bchip.neg { border-color: var(--b-neg); color: var(--b-neg); }
+.share-menu { gap: 6px; padding: 8px; }
+.share-opt { display: grid; gap: 2px; text-align: left; border: 0; background: none; padding: 10px 12px; border-radius: 8px; cursor: pointer; font: inherit; color: inherit; }
+.share-opt:hover, .share-opt:focus-visible { background: var(--soft); }
+.share-opt span { font-size: .85rem; color: var(--muted); }
+td.sc .v { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 1.5px solid transparent; font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; border-radius: 4px; }
+td.sym-eagle .v { border-color: var(--ink); border-radius: 50%; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--ink); }
+td.sym-birdie .v { border-color: var(--ink); border-radius: 50%; }
+td.sym-bogey .v { border-color: var(--ink); border-radius: 2px; }
+td.sym-double .v { border-color: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--ink); }
+details.scan-more summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+details.scan-more summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+details.scan-more[open] summary::before { transform: rotate(90deg); }
+details.scan-more summary::-webkit-details-marker { display: none; }
+
+/* ---------- Kennzahlen, Badges, Formkurve ---------- */
+.mplace { display: none; }
+.kpi span { text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: .78rem; line-height: 1.25; display: block; margin-top: 2px; }
+.bopen { display: grid; gap: 6px; margin-top: 4px; }
+.bopen-h { font: 600 .78rem var(--font-display); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.bopen ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.bopen li { display: grid; grid-template-columns: 34px minmax(0, 9em) 1fr; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px dashed var(--line); font-size: .88rem; }
+.bopen li b { font-weight: 600; }
+.bopen li > span:last-child { color: var(--muted); }
+.mini { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, var(--bc) 60%, var(--line)); color: var(--muted); font: 700 .7rem var(--font-display); }
+.chart .hit { cursor: pointer; }
+.chart .hit.on { stroke: var(--ink); stroke-width: 2; }
+.chart-tip { margin: 0; min-height: 1.4em; }
+
+/* ---------- Breite Bildschirme: zwei Spalten ---------- */
+@media (min-width: 1100px) {
+  .wrap { max-width: 1320px; }
+  .split { display: grid; grid-template-columns: minmax(340px, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .split-l, .split-r { display: grid; gap: 14px; min-width: 0; }
+  .split-l { position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; padding-right: 4px; }
+  .split-l .round[data-id] { padding: 10px 12px; }
+  .split-l .round.cur { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+  body[data-tab="stats"] #main, body[data-tab="review"] #main, body[data-tab="ranking"] #main, body[data-tab="forecast"] #main {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  body[data-tab="stats"] #main > :not(.panel), body[data-tab="review"] #main > :not(.panel), body[data-tab="ranking"] #main > :not(.panel), body[data-tab="forecast"] #main > :not(.panel),
+  body[data-tab="stats"] #main > .panel:has(table.tbl, .chart, .badgewall), body[data-tab="stats"] #main > .panel.chart, body[data-tab="ranking"] #main > .panel:has(table.tbl),
+  body[data-tab="forecast"] #main > .panel:first-of-type, body[data-tab="review"] #main > .panel:first-of-type { grid-column: 1 / -1; }
+}
 /* ---------- Mobil ---------- */
 [hidden] { display: none !important; }
 .wrap > *, main { min-width: 0; }
@@ -257,7 +331,7 @@ table.card thead tr > :first-child { background: var(--soft); }
   h2 { font-size: 1.25rem; }
   h3 { font-size: .95rem; }
   .mode { display: none; }
-  nav.tabs { position: fixed; top: auto; bottom: 0; left: 0; right: 0; z-index: 15; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;
+  nav.tabs { position: fixed; top: auto; bottom: 0; left: 0; right: 0; z-index: 15; display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
     border-bottom: 0; border-top: 1px solid var(--line); padding: 4px 2px calc(4px + env(safe-area-inset-bottom, 0px)); background: var(--surface); overflow: visible;
     box-shadow: 0 -4px 16px rgba(0,0,0,.06); }
   nav.tabs button { display: grid; justify-items: center; gap: 2px; padding: 5px 0 3px; border-radius: 10px; font-size: .62rem; letter-spacing: .02em; min-width: 0; }
@@ -283,6 +357,36 @@ table.card thead tr > :first-child { background: var(--soft); }
   .hint.long:not(.open) { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .round { grid-template-columns: 52px 1fr; gap: 10px; padding: 10px 12px; }
   .thumb { width: 76px; }
+  /* Kopf kompakt */
+  .brand .logo img { width: 36px; }
+  .brand h1 { font-size: 1.15rem; }
+  .wrap { gap: 12px; }
+  /* Tabellen als Karten: erste Spalte als Titel, übrige Werte mit Beschriftung darunter */
+  .tbl-wrap:has(table.stack) { overflow: visible; background: none; }
+  table.tbl.stack, table.tbl.stack tbody { display: block; }
+  table.tbl.stack thead { display: none; }
+  table.tbl.stack tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+  table.tbl.stack td { display: grid; align-content: start; gap: 1px; border: 0; padding: 0; text-align: left; white-space: normal; min-width: 0; font-size: .95rem; }
+  table.tbl.stack td::before { content: attr(data-label); font: 600 .66rem var(--font-display); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  table.tbl.stack td:first-child, table.tbl.stack td.mhide + td { grid-column: 1 / -1; font-weight: 600; font-size: 1rem; }
+  table.tbl.stack td:first-child::before, table.tbl.stack td.mhide + td::before { display: none; }
+  table.tbl.stack td.mhide, table.tbl.stack td.blank { display: none; }
+  table.tbl.stack .mplace { display: inline; color: var(--muted); margin-right: 6px; font-family: var(--font-display); }
+  table.tbl.stack td.mhide + td { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+  table.tbl.stack tr.click:hover td { background: none; }
+  table.tbl.stack tr.sel { background: var(--accent-soft); border-radius: 8px; }
+  table.tbl.stack tr.sel td { background: none; }
+  /* Kennzahlen größer lesbar */
+  .kpi b { font-size: 1.45rem; }
+  .kpi span { font-size: .76rem; }
+  .bopen li { grid-template-columns: 30px 1fr; row-gap: 0; }
+  .bopen li .mini { grid-row: span 2; }
+  .bopen li > span:last-child { grid-column: 2; font-size: .82rem; }
+  .kpis { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  /* Ergebnis-Karten: Name oben, Zahlen in eigener Zeile */
+  .res { grid-template-columns: 22px 40px minmax(0, 1fr); padding: 10px; gap: 8px 10px; }
+  .res .nums { grid-column: 1 / -1; justify-content: space-around; border-top: 1px solid var(--line); padding-top: 8px; }
+  .thumb.lg { width: 96px; height: 64px; }
   /* Spielerliste: Zeile 1 Bild · Name · Bearbeiten, Zeile 2 Runden und Handicaps */
   .pitem { column-gap: 10px; row-gap: 4px; padding: 10px 0; }
   .pitem > .av { order: 0; }
@@ -309,10 +413,8 @@ table.card thead tr > :first-child { background: var(--soft); }
     <button role="tab" data-tab="rounds" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span class="lb">Runden</span></button>
     <button role="tab" data-tab="stats" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg><span class="lb">Statistik</span></button>
     <button role="tab" data-tab="ranking" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M10 17h4"/></svg><span class="lb">Ranking</span></button>
-    <button role="tab" data-tab="review" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span class="lb">Rückblick</span></button>
     <button role="tab" data-tab="forecast" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M6 4l11 4-11 4"/><path d="M3 21h8"/></svg><span class="lb">Briefing</span></button>
-    <button role="tab" data-tab="players" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6 8-6s7 1.5 8 6"/></svg><span class="lb">Spieler</span></button>
-    <button role="tab" data-tab="courses" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span class="lb">Plätze</span></button>
+    <button role="tab" data-tab="more" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg><span class="lb">Mehr</span></button>
   </nav>
   <main id="main">
     <div class="panel empty"><p class="hint">Deine Runden werden geladen …</p></div>
@@ -509,7 +611,7 @@ function meritHTML(V, year = state.year) {
     </tbody></table></div>`;
   const ps = m.rows.map(r => r.pid);
   if (ps.length >= 2) {
-    h += `<h3>Duell-Bilanz</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Zeile gegen Spalte</th>${ps.map(pid => `<th>${esc(pName(pid))}</th>`).join("")}</tr></thead><tbody>
+    h += `<h3>Duell-Bilanz</h3><div class="tbl-wrap"><table class="tbl matrix"><thead><tr><th>Zeile gegen Spalte</th>${ps.map(pid => `<th>${esc(pName(pid))}</th>`).join("")}</tr></thead><tbody>
       ${ps.map(a => `<tr><td><b>${esc(pName(a))}</b></td>${ps.map(b => {
         if (a === b) return `<td class="hint">–</td>`;
         const x = m.h2h[a + "|" + b];
@@ -555,6 +657,9 @@ function playerBadges(pid, year = "all") {
       const info = { full: c.pars.length === 18 && res.complete, n18: c.pars.length === 18, gross: res.gross, pts: res.pts, streak, triple2,
         birdies: diffs.filter(d => d === -1).length, eagles: diffs.filter(d => d === -2).length, };
       played++;
+      if (info.full) out.bestGross = Math.min(out.bestGross ?? Infinity, res.gross);
+      if (info.n18 && res.complete) out.bestPts = Math.max(out.bestPts ?? 0, res.pts);
+      out.bestStreak = Math.max(out.bestStreak ?? 0, streak);
       const counts = inYear(r.date, year);
       BADGES.forEach(b => {
         const o = out[b.id];
@@ -568,14 +673,23 @@ function playerBadges(pid, year = "all") {
   out.played = played;
   return out;
 }
+// Wie weit ist es bis zu einem offenen Badge?
+function badgeProgress(b, pb) {
+  const thr = { u110: 110, u100: 100, u90: 90, u80: 80 }[b.id];
+  if (thr) return pb.bestGross != null ? `Bestes Brutto ${pb.bestGross} – noch ${pb.bestGross - thr + 1} Schl${pb.bestGross - thr + 1 === 1 ? "ag" : "äge"}` : "Noch keine vollständige 18-Loch-Runde";
+  if (b.id === "p40") return pb.bestPts != null ? `Beste Runde ${pb.bestPts} Punkte – noch ${40 - pb.bestPts}` : "Noch keine 18-Loch-Runde";
+  if (b.id === "par3") return `Längste Serie bisher: ${pb.bestStreak || 0} × Par oder besser`;
+  if (b.milestone) return `${pb.played} von ${b.milestone} Runden`;
+  return "Noch keins";
+}
 function badgesHTML(pid) {
   const pb = playerBadges(pid);
-  return `<div class="badges">${BADGES.map(b => {
-    const o = pb[b.id], on = o.count > 0;
-    return `<div class="badge ${on ? "" : "off"} ${b.neg ? "neg" : ""}" style="--bc:var(--b-${b.tier})" title="${esc(b.desc)}">
+  const won = BADGES.filter(b => pb[b.id].count > 0), open = BADGES.filter(b => !pb[b.id].count && !b.neg);
+  const tile = b => { const o = pb[b.id]; return `<div class="badge ${b.neg ? "neg" : ""}" style="--bc:var(--b-${b.tier})" title="${esc(b.desc)}">
       <div class="medal">${esc(b.short)}</div><b>${esc(b.label)}</b>${b.sub ? `<span class="bsub">${esc(b.sub)}</span>` : ""}
-      <span>${on ? (b.milestone ? `erreicht ${fmtDate(o.first)}` : `${o.count}× · zuerst ${fmtDate(o.first)}`) : (b.milestone ? `${pb.played} / ${b.milestone}` : "noch offen")}</span></div>`;
-  }).join("")}</div>`;
+      <span>${b.milestone ? `erreicht ${fmtDate(o.first)}` : `${o.count}× · zuerst ${fmtDate(o.first)}`}</span></div>`; };
+  return (won.length ? `<div class="badges">${won.map(tile).join("")}</div>` : `<p class="hint">Noch keine Badges – die erste Runde unter 110 ist nah.</p>`)
+    + (open.length ? `<div class="bopen"><span class="bopen-h">Noch offen</span><ul>${open.map(b => `<li title="${esc(b.desc)}"><span class="mini" style="--bc:var(--b-${b.tier})">${esc(b.short)}</span><b>${esc(b.label)}</b><span>${esc(badgeProgress(b, pb))}</span></li>`).join("")}</ul></div>` : "");
 }
 function badgeWallHTML() {
   const ps = activePlayers().sort((a, b) => a.name.localeCompare(b.name, "de"));
@@ -1427,30 +1541,72 @@ async function initSample() {
 const state = { tab: "rounds", ready: false, editor: null, course: null, player: null, year: new Date().getFullYear(), statsPlayer: null, scan: null, scoring: "off" };
 function editing() { return (state.tab === "rounds" && state.editor) || (state.tab === "courses" && state.course) || (state.tab === "players" && state.player); }
 
+// Fünf Reiter unten; Statistik (Saison/Rückblick) und Mehr (Spieler/Plätze/Backup) haben Unterseiten
+const TAB_GROUP = { rounds: "rounds", stats: "stats", review: "stats", ranking: "ranking", forecast: "forecast", players: "more", courses: "more", backup: "more" };
+const SUBTABS = { stats: [["stats", "Saison"], ["review", "Rückblick"]], more: [["players", "Spieler"], ["courses", "Plätze"], ["backup", "Backup"]] };
+const lastSub = { stats: "stats", more: "players" };
+function goTab(t) {
+  state.tab = t; state.editor = null; state.view = null; state.course = null; state.player = null; state.scan = null;
+  if (SUBTABS[TAB_GROUP[t]]) lastSub[TAB_GROUP[t]] = t;
+  render(true); window.scrollTo(0, 0);
+}
 $("#tabs").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]"); if (!b) return;
-  state.tab = b.dataset.tab; state.editor = null; state.course = null; state.player = null; state.scan = null;
-  render(true);
+  const t = b.dataset.tab;
+  goTab(lastSub[t] || t);
 });
+function subnavHTML() {
+  const opts = SUBTABS[TAB_GROUP[state.tab]];
+  if (!opts || state.course || state.player) return "";
+  return `<div class="subnav" role="tablist">${opts.map(([v, l]) => `<button role="tab" data-act="subtab" data-v="${v}" aria-selected="${state.tab === v}">${l}</button>`).join("")}</div>`;
+}
 
 function render(force) {
-  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === state.tab)));
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === (TAB_GROUP[state.tab] || state.tab))));
   if (!state.ready) return;
   if (editing() && !force) return;   // Eingaben nicht durch Live-Updates überschreiben
   const m = $("#main");
-  if (state.tab === "rounds") m.innerHTML = state.editor ? editorHTML() : roundsHTML();
-  else if (state.tab === "stats") m.innerHTML = statsHTML();
-  else if (state.tab === "players") m.innerHTML = playersHTML();
-  else if (state.tab === "forecast") m.innerHTML = forecastHTML();
-  else if (state.tab === "ranking") m.innerHTML = rankingHTML();
-  else if (state.tab === "review") m.innerHTML = reviewHTML();
-  else m.innerHTML = state.course ? courseEditorHTML() : coursesHTML();
+  let html;
+  if (state.tab === "rounds") {
+    const detail = state.editor ? editorHTML() : state.view && S.rounds.some(r => r.id === state.view) ? roundViewHTML() : "";
+    html = wideMQ.matches && S.rounds.length
+      ? `<div class="split"><div class="split-l">${roundsHTML()}</div><div class="split-r">${detail || `<div class="panel empty"><p class="hint">Wähle links eine Runde aus.</p></div>`}</div></div>`
+      : detail || roundsHTML();
+  }
+  else if (state.tab === "stats") html = statsHTML();
+  else if (state.tab === "players") html = playersHTML();
+  else if (state.tab === "forecast") html = forecastHTML();
+  else if (state.tab === "ranking") html = rankingHTML();
+  else if (state.tab === "review") html = reviewHTML();
+  else if (state.tab === "backup") html = backupHTML();
+  else html = state.course ? courseEditorHTML() : coursesHTML();
+  m.innerHTML = subnavHTML() + html;
+  document.body.dataset.tab = state.tab;
   if (state.tab === "rounds" && state.editor) { renderScanBox(); updateResults(); }
+  tidyLayout(m);
   compactHints(m);
   if (pendingFile && state.ready) { const f = pendingFile; pendingFile = null; setTimeout(() => readBackupFile(f)); }
 }
+// Tabellen bekommen Spaltennamen je Zelle (auf dem Handy als Karten gezeigt), leere Kennzahlen fallen weg
+function tidyLayout(root) {
+  root.querySelectorAll("table.tbl:not(.matrix):not(.stack)").forEach(t => {
+    const heads = [...t.querySelectorAll("thead th")].map(th => th.textContent.trim());
+    if (!heads.length) return;
+    t.classList.add("stack");
+    const lead2 = /^platz$/i.test(heads[0]) && /^spieler$/i.test(heads[1] || "");
+    t.querySelectorAll("tbody tr").forEach(tr => {
+      const tds = [...tr.children];
+      tds.forEach((td, i) => { td.dataset.label = heads[i] || ""; if (!td.textContent.trim()) td.classList.add("blank"); });
+      if (lead2 && tds[1]) { tds[0].classList.add("mhide"); tds[1].insertAdjacentHTML("afterbegin", `<span class="mplace">${esc(tds[0].textContent.trim())}</span>`); }
+    });
+  });
+  root.querySelectorAll(".kpi").forEach(k => { const v = k.querySelector("b")?.textContent.trim(); if (v === "–" || v === "-" || v === "") k.remove(); });
+}
 // Lange Erklärtexte auf dem Handy auf zwei Zeilen kürzen, mit „mehr“ zum Aufklappen
 const mobileMQ = window.matchMedia("(max-width: 640px)");
+const wideMQ = window.matchMedia("(min-width: 1100px)");
+wideMQ.addEventListener?.("change", () => render());
+mobileMQ.addEventListener?.("change", () => render());
 function compactHints(root) {
   if (!mobileMQ.matches) return;
   root.querySelectorAll("p.hint").forEach(p => {
@@ -1463,49 +1619,120 @@ function compactHints(root) {
 }
 
 // ---------- Runden ----------
+// Persönliche Bestleistung: komplette 18-Loch-Runde mit weniger Schlägen als alle früheren des Spielers
+function isPersonalBest(r, e) {
+  const c = courseById(r.courseId); if (!c || c.pars.length !== 18) return false;
+  const res = result(e, c); if (!res.complete) return false;
+  let earlier = 0;
+  for (const x of S.rounds) {
+    if (x.id === r.id || !x.date || x.date > r.date || (x.date === r.date && (x.updatedAt || 0) >= (r.updatedAt || 0))) continue;
+    const cx = courseById(x.courseId); if (!cx || cx.pars.length !== 18) continue;
+    const ex = (x.entries || []).find(y => y.playerId === e.playerId); if (!ex) continue;
+    const rx = result(ex, cx); if (!rx.complete) continue;
+    earlier++;
+    if (rx.gross <= res.gross) return false;
+  }
+  return earlier > 0;
+}
+function roundPlaces(r, c) {
+  const rows = (r.entries || []).filter(e => playerById(e.playerId)).map(e => ({ e, p: playerById(e.playerId), res: result(e, c) }))
+    .sort((a, b) => b.res.pts - a.res.pts || a.res.gross - b.res.gross);
+  rows.forEach((x, i) => { x.place = i && rows[i - 1].res.pts === x.res.pts ? rows[i - 1].place : i + 1; });
+  return rows;
+}
 function roundsHTML() {
-  const rounds = [...S.rounds].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const all = [...S.rounds].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   const head = `<div class="row"><h2>Runden</h2><span class="spacer"></span><button class="btn primary" data-act="new-round">+ Neue Runde</button></div>`;
-  if (!rounds.length) {
+  if (!all.length) {
     return head + `<div class="panel empty">
       <h3>Noch keine Runden</h3>
       <ol>
-        <li>Unter <b>Spieler</b> alle Mitspieler mit Handicap-Index anlegen.</li>
-        <li>Unter <b>Plätze</b> deinen Platz mit Par, Lochvorgaben, CR und Slope anlegen – oder ihn beim ersten Scan übernehmen.</li>
+        <li>Unter <b>Mehr → Spieler</b> alle Mitspieler mit Handicap-Index anlegen.</li>
+        <li>Unter <b>Mehr → Plätze</b> deinen Platz mit Par, Lochvorgaben, CR und Slope anlegen – oder ihn beim ersten Scan übernehmen.</li>
         <li><b>Neue Runde</b> öffnen, Scorekarte fotografieren, prüfen, sichern.</li>
       </ol>
       <button class="btn primary" data-act="new-round">Erste Runde erfassen</button></div>`;
   }
-  return head + `<div class="list">` + rounds.map(r => {
-    const c = courseById(r.courseId); const d = new Date(r.date + "T12:00:00");
-    const scores = (r.entries || []).map(e => {
-      if (!c) return `<span>${esc(pName(e.playerId))}</span>`;
-      const res = result(e, c);
-      return `<span>${esc(pName(e.playerId))} <b>${res.gross}${grossMark(res)}</b> · <b>${res.pts}</b> P.</span>`;
-    }).join("");
-    return `<button class="round" data-act="open-round" data-id="${r.id}">
-      <div class="date-stamp"><b>${d.getDate()}</b><span>${d.toLocaleDateString("de-DE", { month: "short" })} ${String(d.getFullYear()).slice(2)}</span></div>
+  const fp = state.listPlayer || "", fc = state.listCourse || "";
+  const rounds = all.filter(r => (!fp || (r.entries || []).some(e => e.playerId === fp)) && (!fc || r.courseId === fc));
+  const usedCourses = [...new Set(all.map(r => r.courseId))].map(courseById).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, "de"));
+  const filters = `<div class="filters">
+    <label class="f sm">Spieler<select id="list-player"><option value="">Alle</option>${activePlayers().map(p => `<option value="${p.id}" ${p.id === fp ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>
+    <label class="f sm">Platz<select id="list-course"><option value="">Alle</option>${usedCourses.map(c => `<option value="${c.id}" ${c.id === fc ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>
+    ${fp || fc ? `<button class="btn ghost" data-act="list-reset">Filter aus</button>` : ""}</div>`;
+  let month = "", out = "";
+  for (const r of rounds) {
+    const c = courseById(r.courseId), d = new Date(r.date + "T12:00:00");
+    const m = d.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    if (m !== month) { if (month) out += `</div>`; out += `<h3 class="month">${m}</h3><div class="list">`; month = m; }
+    const places = c ? roundPlaces(r, c) : [];
+    const multi = places.length > 1;
+    const scores = c ? places.map(x => `<span class="${multi && x.place === 1 ? "win" : ""}">${multi && x.place === 1 ? `<i class="crown" title="Tagessieg">★</i>` : ""}${esc(x.p.name)} <b>${x.res.gross}${grossMark(x.res)}</b> · <b>${x.res.pts}</b> P.${isPersonalBest(r, x.e) ? `<em class="pb" title="Persönliche Bestleistung">Best</em>` : ""}</span>`).join("")
+      : (r.entries || []).map(e => `<span>${esc(pName(e.playerId))}</span>`).join("");
+    out += `<button class="round ${r.id === (state.editor?.id || state.view) ? "cur" : ""}" data-act="open-round" data-id="${r.id}">
+      <div class="date-stamp"><b>${d.getDate()}</b><span>${d.toLocaleDateString("de-DE", { weekday: "short" })}</span></div>
       <div><div class="t">${esc(c?.name || "Platz gelöscht")}</div><div class="scores">${scores || "Keine Spieler"}</div></div>
     </button>`;
-  }).join("") + `</div><p class="hint">* Striche als Netto-Doppelbogey gewertet (Par + 2 + Vorgabeschläge), wie bei der Handicap-Berechnung. ½ = nur eine Hälfte gespielt.</p>`;
+  }
+  if (month) out += `</div>`;
+  if (!rounds.length) out = `<div class="panel empty"><p class="hint">Keine Runden für diesen Filter.</p></div>`;
+  return head + filters + out + `<p class="hint">★ Tagessieg nach Stableford · Best = persönliche Bestleistung (Brutto, 18 Loch) · * Striche als Netto-Doppelbogey gewertet · ½ = nur eine Hälfte gespielt.</p>`;
 }
 
 function newDraft() { return { id: null, date: today(), courseId: S.courses.length === 1 ? S.courses[0].id : "", entries: [] }; }
 function openRound(id) {
   const r = S.rounds.find(x => x.id === id); if (!r) return;
-  state.editor = JSON.parse(JSON.stringify(r)); state.scan = null; render(true);
+  state.tab = "rounds"; state.view = id; state.editor = null; state.scan = null; render(true); window.scrollTo(0, 0);
+}
+const curRound = () => state.editor || S.rounds.find(r => r.id === state.view) || null;
+
+function roundViewHTML() {
+  const r = S.rounds.find(x => x.id === state.view), c = courseById(r.courseId);
+  const d = new Date(r.date + "T12:00:00");
+  const places = c ? roundPlaces(r, c) : [];
+  const multi = places.length > 1;
+  const cards = places.map(x => {
+    const bs = roundBadges(r, x.e), pb = isPersonalBest(r, x.e);
+    const chips = [pb ? `<span class="bchip pb">Persönliche Bestleistung</span>` : "",
+      ...bs.map(({ b, count, isNew }) => `<span class="bchip ${b.neg ? "neg" : ""}">${esc(b.label)}${count > 1 ? ` ×${count}` : ""}${isNew ? " · neu" : ""}</span>`)].join("");
+    return `<div class="res ${multi && x.place === 1 ? "win" : ""}">
+      <div class="pl">${multi ? x.place + "." : ""}</div>
+      ${avatar(x.p, 40)}
+      <div class="who"><b>${esc(x.p.name)}</b><span class="hint">HCP ${fmt1(+x.e.hcp)} · Spielvorgabe ${x.res.ph}${x.e.cr != null ? ` · ${esc(x.e.tee || "eigener Abschlag")}` : ""}</span>${chips ? `<div class="bchips">${chips}</div>` : ""}</div>
+      <div class="nums">
+        <div class="main"><b>${x.res.pts}</b><span>Punkte</span></div>
+        <div><b>${x.res.gross}${grossMark(x.res)}</b><span>Brutto</span></div>
+        <div><b>${fmtVs(x.res.vsPar)}</b><span>zu Par</span></div>
+        <div><b>${x.res.net}</b><span>Netto</span></div>
+      </div></div>`;
+  }).join("");
+  return `<div class="row"><button class="btn ghost" data-act="close-view">← Runden</button><span class="spacer"></span>
+      ${c && places.length ? `<button class="btn" data-act="share-toggle" aria-expanded="false">Teilen …</button>` : ""}
+      <button class="btn primary" data-act="edit-round">Bearbeiten</button></div>
+    <div class="panel share-menu" id="share-menu" hidden>
+      <button class="share-opt" data-act="round-card"><b>Rundenkarte</b><span>Bild mit Ergebnis und Platz – für WhatsApp & Co.</span></button>
+      <button class="share-opt" data-act="round-pdf" id="rd-pdf-btn"><b>Scorekarte als PDF</b><span>A4 quer, zum Ausdrucken oder Ablegen</span></button>
+      <button class="share-opt" data-act="round-file"><b>Bogey-Datei</b><span>Freunde übernehmen die Runde in ihre Bogey-Club-App</span></button>
+    </div>
+    <p class="hint" id="rd-pdf-status" hidden></p>
+    <div class="panel card-box" id="rd-card" hidden></div>
+    <section class="panel round-head">
+      <div><h2>${esc(c?.name || "Platz gelöscht")}</h2>
+        <p class="hint">${d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}${c ? ` · ${c.pars.length} Loch · Par ${sum(c.pars)} · CR ${fmt1(+c.cr)} · Slope ${c.slope}` : ""}</p></div>
+      ${c && (c.photo || mapOf(c)) ? `<span class="thumb lg">${courseThumb(c)}</span>` : ""}
+    </section>
+    ${places.length ? `<section class="panel"><h3>Ergebnis</h3><div class="results">${cards}</div></section>` : ""}
+    ${c && places.length ? `<section class="panel"><h3>Scorekarte</h3><div class="card-wrap">${cardTable(JSON.parse(JSON.stringify(r)), c, true)}</div>
+      <div class="legend-sym"><span><i class="c"></i>Birdie</span><span><i class="c" style="box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ink)"></i>Eagle</span><span><i></i>Bogey</span><span><i style="box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ink)"></i>Doppelbogey+</span><span><b style="color:var(--accent)">•</b> Vorgabeschlag</span><span>– = Strich</span></div></section>` : ""}
+    <div class="row"><span class="spacer"></span><button class="btn danger" data-act="del-round">Runde löschen</button></div>`;
 }
 
 function editorHTML() {
   const d = state.editor, c = courseById(d.courseId);
   const chips = S.players.map(p => `<button class="chip" data-act="toggle-player" data-id="${p.id}" aria-pressed="${d.entries.some(e => e.playerId === p.id)}"><span class="who">${avatar(p, 22)}<span class="nm">${esc(p.name)}</span></span></button>`).join("")
-    || `<span class="hint">Noch keine Spieler. Lege sie im Reiter „Spieler“ an oder übernimm sie aus dem Scan.</span>`;
+    || `<span class="hint">Noch keine Spieler. Lege sie unter „Mehr → Spieler“ an oder übernimm sie aus dem Scan.</span>`;
   const hcps = d.entries.map((e, i) => `<label class="f">HCP ${esc(pName(e.playerId))}<input id="hcp-${i}" data-hcp="${i}" inputmode="decimal" value="${String(e.hcp).replace(".", ",")}"></label>`).join("");
-  return `<div class="row"><button class="btn ghost" data-act="close-editor">← Runden</button><span class="spacer"></span>
-      ${courseById(d.courseId) && d.entries.length ? `<button class="btn" data-act="round-card">Rundenkarte teilen</button><button class="btn" data-act="round-file" title="Runde als Bogey-Datei an Freunde schicken – sie öffnen sie in ihrer Bogey-Club-App">Als Datei teilen</button><button class="btn" data-act="round-pdf" id="rd-pdf-btn">Scorekarte als PDF</button>` : ""}
-      ${d.id ? `<button class="btn danger" data-act="del-round">Runde löschen</button>` : ""}</div>
-    <p class="hint" id="rd-pdf-status" hidden></p>
-    <div class="panel card-box" id="rd-card" hidden></div>
+  return `<div class="row"><button class="btn ghost" data-act="close-editor">← ${d.id ? "Zurück" : "Runden"}</button></div>
     <section class="panel">
       <h2>${d.id ? "Runde bearbeiten" : "Neue Runde"}</h2>
       <div class="fields">
@@ -1516,7 +1743,7 @@ function editorHTML() {
       <div style="display:grid;gap:8px"><h3>Spieler</h3><div class="chips">${chips}</div></div>
       ${hcps ? `<div class="fields">${hcps}</div><p class="hint">Handicap-Index am Spieltag – daraus werden Spielvorgabe und Stableford berechnet.</p>` : ""}
     </section>
-    <section class="panel"><h3>Scorekarte einlesen</h3><div id="scanbox"></div></section>
+    ${d.id ? `<details class="panel scan-more"><summary><h3>Scorekarte neu einlesen</h3></summary><div id="scanbox"></div></details>` : `<section class="panel"><h3>Scorekarte einlesen</h3><div id="scanbox"></div></section>`}
     <section class="panel">
       <h3>Scorekarte</h3>
       ${c ? (d.entries.length ? `<div class="card-wrap">${cardTable(d, c)}</div>
@@ -1525,11 +1752,11 @@ function editorHTML() {
         : `<p class="hint">Wähle die Spieler aus oder scanne die Karte.</p>`)
       : `<p class="hint">Wähle einen Platz – oder scanne die Karte, dann kann der Platz aus dem Foto angelegt werden.</p>`}
     </section>
-    <div class="row"><span class="spacer"></span><button class="btn ghost" data-act="close-editor">Abbrechen</button>
+    <div class="row">${d.id ? `<button class="btn danger" data-act="del-round">Runde löschen</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-act="close-editor">Abbrechen</button>
       <button class="btn primary" data-act="save-round" ${c && d.entries.length ? "" : "disabled"}>Runde sichern</button></div>`;
 }
 
-function cardTable(d, c) {
+function cardTable(d, c, ro = false) {
   const n = c.pars.length, rk = siRanks(c.si, n);
   const holes = Array.from({ length: n }, (_, i) => i);
   const split = n === 18;
@@ -1550,6 +1777,7 @@ function cardTable(d, c) {
     const res = result(e, c);
     const cell = i => {
       const s = e.strokes[i], dots = res.rec[i] > 0 ? "•".repeat(Math.min(res.rec[i], 3)) : "";
+      if (ro) return `<td class="sc ro ${symClass(s, c.pars[i])}"><span class="dots">${dots}</span><span class="v">${s || "–"}</span></td>`;
       return `<td class="sc ${symClass(s, c.pars[i])}" data-r="${ri}" data-i="${i}"><span class="dots">${dots}</span><input id="s-${ri}-${i}" inputmode="numeric" maxlength="2" placeholder="·" aria-label="${esc(pName(e.playerId))} Loch ${i + 1}" value="${s || ""}"></td>`;
     };
     h += `<tr data-row="${ri}"><td class="name" title="${esc(pName(e.playerId))}">${esc(pName(e.playerId))}</td>`;
@@ -1574,6 +1802,7 @@ function updateResults() {
   }).join("");
   box.innerHTML = `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Spieler</th><th>Spielvorgabe</th><th>Brutto</th><th>± Par</th><th>Netto</th><th>Stableford</th><th>Virt. HCP</th><th>Stbf virtuell</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="hint">Virtuelles Handicap: aus den Runden vor diesem Datum berechnet, nach WHS-Logik. Bis 3 auswertbare Runden vorliegen, gilt das offizielle.</p>`;
+  tidyLayout(box);
 }
 
 function onCellInput(inp) {
@@ -1597,7 +1826,7 @@ async function saveRound() {
   const obj = { id: d.id || uid(), date: d.date || today(), courseId: d.courseId, entries: d.entries.map(e => ({ playerId: e.playerId, hcp: +e.hcp || 0, strokes: fit(e.strokes, c.pars.length), ...(e.cr != null && e.slope != null ? { cr: e.cr, slope: e.slope, tee: e.tee || "" } : {}) })), updatedAt: Date.now() };
   await save("rounds", obj);
   toast("Runde gesichert");
-  state.editor = null; state.scan = null; render(true);
+  state.editor = null; state.scan = null; state.view = obj.id; render(true); window.scrollTo(0, 0);
 }
 
 // ---------- Scan ----------
@@ -1834,7 +2063,8 @@ function statsHTML() {
 }
 
 function chartSVG(st, key = "pts") {
-  const W = 640, H = 240, L = 34, R = 12, T = 12, B = 28;
+  const narrow = typeof mobileMQ !== "undefined" && mobileMQ.matches;
+  const W = narrow ? 360 : 640, H = narrow ? 250 : 240, L = 30, R = 10, T = 12, B = 28;
   const all = st.flatMap(s => s.points);
   if (!all.length) return `<p class="hint">Noch keine 18-Loch-Runden in diesem Jahr.</p>`;
   const ts = all.map(p => new Date(p.date + "T12:00:00").getTime());
@@ -1855,9 +2085,13 @@ function chartSVG(st, key = "pts") {
     const col = `var(${SERIES[i % 5]})`;
     const pts = s.points.map(p => [x(new Date(p.date + "T12:00:00").getTime()), y(p[key])]);
     if (pts.length > 1) g += `<polyline fill="none" stroke="${col}" stroke-width="2.25" stroke-linejoin="round" points="${pts.map(p => p.join(",")).join(" ")}"/>`;
-    pts.forEach((p, k) => g += `<circle cx="${p[0]}" cy="${p[1]}" r="${k === pts.length - 1 ? 4.5 : 3}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"><title>${esc(s.player.name)}: ${s.points[k][key]} Punkte, ${fmtDate(s.points[k].date)}</title></circle>`);
+    pts.forEach((p, k) => {
+      const tip = `${s.player.name}: ${s.points[k][key]} Punkte · ${fmtDate(s.points[k].date)}${s.points[k].course ? " · " + s.points[k].course : ""}`;
+      g += `<circle cx="${p[0]}" cy="${p[1]}" r="${k === pts.length - 1 ? 4.5 : 3}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/>`
+        + `<circle class="hit" data-act="chart-pt" data-tip="${esc(tip)}" cx="${p[0]}" cy="${p[1]}" r="11" fill="transparent"><title>${esc(tip)}</title></circle>`;
+    });
   });
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Stableford-Punkte je Runde im Jahresverlauf">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Stableford-Punkte je Runde im Jahresverlauf">${g}</svg><p class="chart-tip hint" aria-live="polite">Tippe auf einen Punkt, um die Runde zu sehen.</p>`;
 }
 
 // ---------- Spieler ----------
@@ -1878,11 +2112,11 @@ function playersHTML() {
     ${f.id ? (v => `<p class="hint">Virtuelles Handicap: <b>${v.hi != null ? fmt1(v.hi) : "noch keins"}</b> – berechnet aus ${v.count} auswertbaren Runde${v.count === 1 ? "" : "n"}${v.hi != null ? "" : ", ab 3 Runden verfügbar"}. Es ändert sich automatisch mit jeder Runde, das offizielle bleibt wie eingetragen.</p>`)(virtualHI(f.id)) : ""}
     <div class="row">${f.id ? `<button class="btn danger" data-act="del-player">Löschen</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-act="cancel-player">Abbrechen</button><button class="btn primary" data-act="save-player">Sichern</button></div></section>`;
   const list = [...S.players].sort((a, b) => (!!a.hidden - !!b.hidden) || a.name.localeCompare(b.name, "de"));
-  if (!list.length && !f) return h + `<div class="panel empty"><h3>Noch keine Spieler</h3><p class="hint">Lege alle an, deren Runden du verfolgen möchtest – mit aktuellem Handicap-Index.</p><button class="btn primary" data-act="new-player">Ersten Spieler anlegen</button></div>` + backupHTML();
+  if (!list.length && !f) return h + `<div class="panel empty"><h3>Noch keine Spieler</h3><p class="hint">Lege alle an, deren Runden du verfolgen möchtest – mit aktuellem Handicap-Index.</p><button class="btn primary" data-act="new-player">Ersten Spieler anlegen</button></div>`;
   return h + `<section class="panel"><div class="plist">${list.map(p => {
     const n = S.rounds.filter(r => (r.entries || []).some(e => e.playerId === p.id)).length;
     return `<div class="pitem" ${p.hidden ? 'style="opacity:.6"' : ""}>${avatar(p, 36)}<span class="n">${esc(p.name)}${p.hidden ? ` <span class="hcp-badge" style="font-size:.75rem">ausgeblendet</span>` : ""}</span><span class="hint">${n} Runde${n === 1 ? "" : "n"}</span><span class="hcp-badge">HCP ${fmt1(+p.hcp)}</span>${(v => `<span class="hcp-badge virt" title="Virtuelles Handicap aus ${v.count} Runden">virt. ${v.hi != null ? fmt1(v.hi) : v.count + "/3"}</span>`)(virtualHI(p.id))}<button class="btn ghost" data-act="edit-player" data-id="${p.id}">Bearbeiten</button></div>`;
-  }).join("")}</div></section>` + backupHTML();
+  }).join("")}</div></section>`;
 }
 
 // ---------- Plätze ----------
@@ -2359,7 +2593,7 @@ async function exportRoundFile(r) {
 let pendingBackup = null, pendingFile = null;
 async function readBackupFile(file) {
   if (!state.ready) { pendingFile = file; return; }
-  if (state.tab !== "players" || state.player) { state.tab = "players"; state.player = null; state.editor = null; state.course = null; render(true); }
+  if (state.tab !== "backup") goTab("backup");
   const st = $("#backup-status");
   pendingBackup = null;
   st.innerHTML = `<p class="hint">Datei wird gelesen …</p>`;
@@ -2443,7 +2677,11 @@ $("#main").addEventListener("click", async e => {
     case "goto-new": state.tab = "rounds"; state.editor = newDraft(); render(true); break;
     case "open-round": openRound(id); break;
     case "open-round-stats": state.tab = "rounds"; openRound(id); break;
-    case "close-editor": state.editor = null; state.scan = null; render(true); break;
+    case "close-editor": state.view = state.editor?.id && S.rounds.some(r => r.id === state.editor.id) ? state.editor.id : null; state.editor = null; state.scan = null; render(true); break;
+    case "close-view": state.view = null; render(true); break;
+    case "edit-round": { const r = S.rounds.find(x => x.id === state.view); if (r) { state.editor = JSON.parse(JSON.stringify(r)); state.scan = null; render(true); window.scrollTo(0, 0); } break; }
+    case "share-toggle": { const m = $("#share-menu"); if (m) { m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); } break; }
+    case "list-reset": state.listPlayer = ""; state.listCourse = ""; render(true); break;
     case "toggle-player": {
       const d = state.editor, i = d.entries.findIndex(x => x.playerId === id);
       if (i >= 0) d.entries.splice(i, 1);
@@ -2451,17 +2689,19 @@ $("#main").addEventListener("click", async e => {
       render(true); break;
     }
     case "save-round": saveRound(); break;
-    case "del-round": if (armed("round", b, "Wirklich löschen?")) { await removeDoc("rounds", state.editor.id); state.editor = null; toast("Runde gelöscht"); render(true); } break;
+    case "del-round": if (armed("round", b, "Wirklich löschen?")) { await removeDoc("rounds", curRound().id); state.editor = null; state.view = null; toast("Runde gelöscht"); render(true); } break;
     case "apply-scan": applyScan(); break;
     case "discard-scan": state.scan = null; renderScanBox(); break;
     case "stats-player": state.statsPlayer = id; render(true); break;
     case "scoring": state.scoring = b.dataset.v; render(true); break;
     case "review-pdf": exportReviewPDF(); break;
-    case "round-pdf": exportRoundPDF(state.editor); break;
-    case "round-card": showRoundCard(state.editor); break;
-    case "round-file": exportRoundFile(state.editor); break;
-    case "card-share": shareRoundCard(state.editor); break;
-    case "card-save": saveRoundCard(state.editor); break;
+    case "round-pdf": exportRoundPDF(curRound()); break;
+    case "subtab": goTab(b.dataset.v); break;
+    case "chart-pt": { const t = b.closest(".chart")?.querySelector(".chart-tip"); if (t) t.textContent = b.dataset.tip; b.closest("svg")?.querySelectorAll(".hit.on").forEach(x => x.classList.remove("on")); b.classList.add("on"); break; }
+    case "round-card": showRoundCard(curRound()); break;
+    case "round-file": exportRoundFile(curRound()); break;
+    case "card-share": shareRoundCard(curRound()); break;
+    case "card-save": saveRoundCard(curRound()); break;
     case "card-close": { const bx = $("#rd-card"); if (bx) { bx.hidden = true; bx.innerHTML = ""; } break; }
     case "backup-export": exportBackup(); break;
     case "backup-apply": applyBackup(); break;
@@ -2550,6 +2790,8 @@ $("#main").addEventListener("change", e => {
   else if (t.id === "la-course") { state.laCourse = t.value; render(true); }
   else if (t.id === "br-player") { state.brPlayer = t.value; render(true); }
   else if (t.id === "fc-course") { state.fcCourse = t.value; render(true); }
+  else if (t.id === "list-player") { state.listPlayer = t.value; render(true); }
+  else if (t.id === "list-course") { state.listCourse = t.value; render(true); }
   else if (t.id === "year") { state.year = t.value === "all" ? "all" : +t.value; state.statsPlayer = null; render(true); }
   else if (t.id === "co-photo-file" && t.files?.[0]) uploadCoursePhoto(t.files[0]);
   else if (t.id === "backup-file" && t.files?.[0]) { readBackupFile(t.files[0]); t.value = ""; }
