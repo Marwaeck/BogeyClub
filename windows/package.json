@@ -56,7 +56,16 @@
       "shortcutName": "Bogey Club",
       "artifactName": "Bogey-Club-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "bogey",
+        "name": "Bogey-Club-Datei",
+        "description": "Bogey-Club-Datei (Backup oder Runde)",
+        "mimeType": "application/vnd.bogeyclub",
+        "role": "Viewer"
+      }
+    ]
   },
   "license": "SEE LICENSE IN ../LICENSE"
 }

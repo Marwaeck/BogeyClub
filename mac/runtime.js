@@ -104,6 +104,11 @@
       await call("download.save", { filename: filename || "download", base64: await toBase64(blob) });
     }
   };
+  // Android: Teilen-Menü des Systems (WhatsApp, Mail …) – die WebView kennt navigator.share nicht
+  if (android) downloads.share = async ({ filename, data }) => {
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    await call("share", { filename: filename || "Datei", base64: await toBase64(blob) });
+  };
 
   // ---- Scorekarte lesen: Bilder an die Texterkennung von macOS, Antwort im selben JSON-Format ----
   let ocrLoad = null;

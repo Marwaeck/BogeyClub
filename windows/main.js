@@ -148,6 +148,7 @@ async function installUpdate(release) {
 function buildMenu() {
   const template = [
     { label: "Datei", submenu: [
+      { label: "Bogey-Datei öffnen …", accelerator: "CmdOrCtrl+O", click: () => chooseFile() },
       { label: "Datenordner öffnen", click: () => shell.openPath(DATA) },
       { type: "separator" },
       { role: "quit", label: "Beenden" }
@@ -195,12 +196,37 @@ function createWindow() {
   // Externe Links (Apple Karten, Google Maps …) im Standard-Browser öffnen
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^(https?|mailto):/.test(url)) shell.openExternal(url); return { action: "deny" }; });
   win.webContents.on("will-navigate", (e, url) => { if (!url.startsWith("bogey://")) { e.preventDefault(); if (/^(https?|mailto):/.test(url)) shell.openExternal(url); } });
+  win.webContents.on("did-finish-load", () => { pageReady = true; sendFiles(); });
+  win.webContents.on("did-start-loading", () => { pageReady = false; });
   win.webContents.on("render-process-gone", () => win.loadURL("bogey://app/index.html"));
   win.loadURL("bogey://app/index.html");
 }
 
+// ---- Bogey-Dateien öffnen (Doppelklick im Explorer, „Öffnen mit“, Datei → Öffnen) ----
+const openArgs = argv => argv.slice(1).filter(a => /\.(bogey|json)$/i.test(a) && fs.existsSync(a));
+let pendingFiles = openArgs(process.argv), pageReady = false;
+function sendFiles() {
+  if (!win || !pageReady) return;
+  const files = pendingFiles; pendingFiles = [];
+  for (const f of files) {
+    try {
+      const name = JSON.stringify(path.basename(f)), b64 = fs.readFileSync(f).toString("base64");
+      win.webContents.executeJavaScript(`(window.bogeyOpenFile ? window.bogeyOpenFile(${name}, "${b64}") : (window.__bogeyOpenQueue = window.__bogeyOpenQueue || []).push([${name}, "${b64}"]))`).catch(() => { });
+    } catch (e) { }
+  }
+}
+function openFiles(files) { pendingFiles.push(...files); sendFiles(); }
+async function chooseFile() {
+  const r = await dialog.showOpenDialog(win, { title: "Bogey-Datei öffnen", properties: ["openFile"],
+    filters: [{ name: "Bogey-Club-Dateien", extensions: ["bogey", "json"] }] });
+  if (!r.canceled && r.filePaths[0]) openFiles([r.filePaths[0]]);
+}
+
 if (!app.requestSingleInstanceLock()) app.quit();
-app.on("second-instance", () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+app.on("second-instance", (_e, argv) => {
+  if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
+  openFiles(openArgs(argv));
+});
 
 app.whenReady().then(() => {
   try {

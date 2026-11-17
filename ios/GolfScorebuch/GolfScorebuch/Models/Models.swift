@@ -4,6 +4,8 @@ import SwiftData
 @Model
 final class Player {
     var uid: UUID = UUID()
+    /// ID in Bogey-Dateien (.bogey) – leer = uid; behält die IDs aus Web-, Mac- oder Android-App bei
+    var bogeyID: String = ""
     var name: String = ""
     /// Offizieller Handicap-Index (WHS)
     var handicapIndex: Double = 54
@@ -19,6 +21,8 @@ final class Player {
 @Model
 final class Course {
     var uid: UUID = UUID()
+    /// ID in Bogey-Dateien (.bogey) – leer = uid; behält die IDs aus Web-, Mac- oder Android-App bei
+    var bogeyID: String = ""
     var name: String = ""
     var courseRating: Double = 72
     var slope: Int = 113
@@ -42,6 +46,8 @@ final class Course {
 @Model
 final class Round {
     var uid: UUID = UUID()
+    /// ID in Bogey-Dateien (.bogey) – leer = uid; behält die IDs aus Web-, Mac- oder Android-App bei
+    var bogeyID: String = ""
     var date: Date = Date.now
     var updated: Date = Date.now
     var course: Course?

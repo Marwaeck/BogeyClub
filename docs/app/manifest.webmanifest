@@ -7,6 +7,16 @@
   "display": "standalone",
   "background_color": "#eef3ef",
   "theme_color": "#1c6641",
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "application/vnd.bogeyclub": [
+          ".bogey"
+        ]
+      }
+    }
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",

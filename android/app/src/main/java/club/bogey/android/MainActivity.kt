@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.MimeTypeMap
@@ -49,6 +50,8 @@ class MainActivity : ComponentActivity() {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var cameraUri: Uri? = null
     private var pendingSave: Pair<Int, ByteArray>? = null
+    private var pageReady = false
+    private val pendingOpen = mutableListOf<Pair<String, String>>()   // Name, Base64
 
     private val pickFile = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         val uris = WebChromeClient.FileChooserParams.parseResult(r.resultCode, r.data)
@@ -127,6 +130,8 @@ class MainActivity : ComponentActivity() {
                 openExternal(url)   // Apple Karten, Google Maps … im Browser bzw. in der passenden App
                 return true
             }
+            override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) { pageReady = false }
+            override fun onPageFinished(view: WebView, url: String?) { pageReady = true; flushOpen() }
             override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {
                 recreate(); return true
             }
@@ -163,8 +168,52 @@ class MainActivity : ComponentActivity() {
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
         else web.loadUrl("https://$APP_HOST/index.html")
+        if (savedInstanceState == null) handleOpenIntent(intent)
 
         checkForUpdates()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleOpenIntent(intent)
+    }
+
+    /** Geöffnete oder geteilte Bogey-Datei lesen und an die Oberfläche geben: window.bogeyOpenFile(name, base64). */
+    private fun handleOpenIntent(intent: Intent?) {
+        if (intent == null || !::web.isInitialized) return
+        val uri: Uri? = when (intent.action) {
+            Intent.ACTION_VIEW -> intent.data
+            Intent.ACTION_SEND -> streamUri(intent)
+            else -> null
+        }
+        if (uri == null) return
+        worker.execute {
+            try {
+                var name = uri.lastPathSegment?.substringAfterLast('/') ?: "Datei.bogey"
+                contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                    if (c.moveToFirst() && !c.isNull(0)) name = c.getString(0)
+                }
+                val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@execute
+                if (bytes.size > 200 * 1024 * 1024) { toast("Die Datei ist zu groß."); return@execute }
+                val isZip = bytes.size > 4 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte()
+                val isJson = bytes.isNotEmpty() && bytes[0] == '{'.code.toByte()
+                if (!isZip && !isJson) { toast("Das ist keine Bogey-Datei."); return@execute }
+                val b64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                runOnUiThread { pendingOpen.add(name to b64); flushOpen() }
+            } catch (e: Exception) { toast("Die Datei konnte nicht gelesen werden.") }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun streamUri(i: Intent): Uri? = i.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+
+    private fun flushOpen() {
+        if (!pageReady || pendingOpen.isEmpty()) return
+        val files = pendingOpen.toList(); pendingOpen.clear()
+        for ((name, b64) in files) {
+            val n = JSONObject.quote(name)
+            web.evaluateJavascript("(window.bogeyOpenFile ? window.bogeyOpenFile($n, \"$b64\") : (window.__bogeyOpenQueue = window.__bogeyOpenQueue || []).push([$n, \"$b64\"]))", null)
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -223,6 +272,21 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 null
+            }
+            "share" -> {
+                val name = s("filename").ifBlank { "Datei" }.replace(Regex("[\\\\/:*?\"<>|]"), "-")
+                val bytes = Base64.decode(s("base64"), Base64.DEFAULT)
+                val dir = File(cacheDir, "share").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
+                val file = File(dir, name).apply { writeBytes(bytes) }
+                val uri = FileProvider.getUriForFile(this, "$packageName.files", file)
+                val type = if (name.endsWith(".bogey", true)) "application/vnd.bogeyclub"
+                    else MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase()) ?: "application/octet-stream"
+                runOnUiThread {
+                    val send = Intent(Intent.ACTION_SEND).setType(type).putExtra(Intent.EXTRA_STREAM, uri)
+                        .putExtra(Intent.EXTRA_SUBJECT, name).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    try { startActivity(Intent.createChooser(send, "Teilen")) } catch (e: ActivityNotFoundException) { toast("Keine App zum Teilen gefunden.") }
+                }
+                JSONObject()
             }
             else -> JSONObject().put("error", "unknown_command")
         }

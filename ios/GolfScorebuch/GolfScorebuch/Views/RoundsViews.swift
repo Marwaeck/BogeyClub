@@ -7,12 +7,20 @@ struct RoundsListView: View {
     @State private var showNew = false
     @State private var showLink = false
     @State private var editing: Round?
+    @State private var sharing: SharedFile?
+    @State private var shareError: String?
 
     var body: some View {
         NavigationStack {
             List {
                 ForEach(rounds) { r in
                     Button { editing = r } label: { RoundRow(round: r) }.foregroundStyle(.primary)
+                        .swipeActions(edge: .leading) {
+                            Button { share(r) } label: { Label("Teilen", systemImage: "square.and.arrow.up") }.tint(.fairway)
+                        }
+                        .contextMenu {
+                            Button { share(r) } label: { Label("Als Bogey-Datei teilen", systemImage: "square.and.arrow.up") }
+                        }
                 }
                 .onDelete { idx in idx.forEach { context.delete(rounds[$0]) } }
             }
@@ -39,7 +47,19 @@ struct RoundsListView: View {
             .sheet(isPresented: $showNew) { RoundEditorView(round: nil) }
             .sheet(isPresented: $showLink) { RoundEditorView(round: nil, startWithLink: true) }
             .sheet(item: $editing) { RoundEditorView(round: $0) }
+            .sheet(item: $sharing) { ShareSheet(url: $0.url).presentationDetents([.medium, .large]) }
+            .alert("Teilen nicht möglich", isPresented: Binding(get: { shareError != nil }, set: { if !$0 { shareError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: { Text(shareError ?? "") }
         }
+    }
+}
+
+extension RoundsListView {
+    /// Runde als .bogey-Datei an Freunde – sie öffnen sie in ihrer Bogey-Club-App
+    fileprivate func share(_ r: Round) {
+        do { sharing = SharedFile(url: try BogeyTransfer.roundFile(r)) }
+        catch { shareError = "Für diese Runde fehlt der Platz." }
     }
 }
 

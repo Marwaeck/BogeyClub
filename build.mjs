@@ -52,6 +52,8 @@ for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png"]) copyFi
 writeFileSync(join(OUT, "manifest.webmanifest"), JSON.stringify({
   name: "Bogey Club", short_name: "Bogey Club", lang: "de", start_url: "./", scope: "./", display: "standalone",
   background_color: "#eef3ef", theme_color: "#1c6641",
+  // Installierte Web-App (Chrome/Edge am PC): .bogey-Dateien per Doppelklick öffnen
+  file_handlers: [{ action: "./", accept: { "application/vnd.bogeyclub": [".bogey"] } }],
   icons: [{ src: "icons/icon-192.png", sizes: "192x192", type: "image/png" }, { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }]
 }, null, 2) + "\n");
 

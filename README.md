@@ -39,7 +39,24 @@ Die Karte wird in der Web-App in der Datenbank-Collection `coursemaps` gespeiche
 
 ## Daten
 
-Runden, Spieler und Plätze liegen nicht im Repo. Sicherung über die Web-App: Reiter **Spieler → Daten-Backup**.
+Runden, Spieler und Plätze liegen nicht im Repo. Sicherung in jeder App über **Spieler → Daten-Backup** (iPhone: **Mehr → Daten-Backup**).
+
+## Dateiformat .bogey
+
+Backups und geteilte Runden sind Bogey-Dateien (`.bogey`, MIME-Typ `application/vnd.bogeyclub`, Typ-ID `club.bogey.file`). Alle Apps melden die Endung beim System an: Doppelklick bzw. Antippen (Dateien, Mail, WhatsApp, „Teilen an Bogey Club“ auf Android) öffnet Bogey Club mit einer Vorschau vor dem Einspielen.
+
+Aufbau – ein ZIP-Container:
+
+| Eintrag | Inhalt |
+|---|---|
+| `mimetype` | `application/vnd.bogeyclub`, unkomprimiert, als erster Eintrag |
+| `bogey.json` | `{ format: "bogey", version: 1, kind: "backup" \| "round", app, exportedAt, players, courses, rounds, coursemaps }` – dieselben Dokumente wie in der Datenbank der Web-App, Platzkarten als Objekt je Kartenschlüssel |
+| `images/<id>.jpg` | Spieler- und Luftbilder (ID wie im Feld `photo`) |
+
+- **`kind: "backup"`** – alles. Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt, gelöscht wird nichts.
+- **`kind: "round"`** – eine Runde mit ihren Spielern, dem Platz und ggf. der Platzkarte („Als Datei teilen“ in der Runde; iPhone: Runde nach rechts wischen). Beim Empfänger werden Spieler und Plätze über ID oder Namen zugeordnet und nie verändert; nur Fehlendes wird angelegt.
+- Schreiben/Lesen: `web/index.html` (Abschnitt „Daten-Backup und Bogey-Dateien“, für Web, Claude, Mac, Windows, Android) und `BogeyScan/Sources/BogeyScan/BogeyFile.swift` (iPhone-App, mit Tests). Ältere JSON-Backups werden weiter gelesen.
+- Geöffnete Dateien reichen die Apps über `window.bogeyOpenFile(name, base64)` an die Oberfläche weiter (Mac: `WebController.openFile`, Windows: `main.js`, Android: `MainActivity.handleOpenIntent`, installierte Web-App: File Handling API in `server/runtime.js`).
 
 ## Mac-App (ohne Claude)
 

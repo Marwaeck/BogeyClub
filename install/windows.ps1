@@ -49,6 +49,17 @@ try {
     $link.Save()
   }
 
+  # .bogey-Dateien mit Bogey Club verknüpfen (nur für diesen Benutzer, ohne Admin-Rechte)
+  $classes = 'HKCU:\Software\Classes'
+  New-Item -Path "$classes\.bogey" -Force | Out-Null
+  Set-ItemProperty -Path "$classes\.bogey" -Name '(Default)' -Value 'BogeyClub.Datei'
+  Set-ItemProperty -Path "$classes\.bogey" -Name 'Content Type' -Value 'application/vnd.bogeyclub'
+  New-Item -Path "$classes\BogeyClub.Datei\DefaultIcon" -Force | Out-Null
+  New-Item -Path "$classes\BogeyClub.Datei\shell\open\command" -Force | Out-Null
+  Set-ItemProperty -Path "$classes\BogeyClub.Datei" -Name '(Default)' -Value 'Bogey-Club-Datei'
+  Set-ItemProperty -Path "$classes\BogeyClub.Datei\DefaultIcon" -Name '(Default)' -Value "`"$exe`",0"
+  Set-ItemProperty -Path "$classes\BogeyClub.Datei\shell\open\command" -Name '(Default)' -Value "`"$exe`" `"%1`""
+
   Remove-Item -Path $work -Recurse -Force -ErrorAction SilentlyContinue
   Start-Process -FilePath $exe
   Write-Host "✓ Bogey Club $version ist installiert (Startmenü und Desktop)." -ForegroundColor Green

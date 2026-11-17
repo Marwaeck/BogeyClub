@@ -46,6 +46,25 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSApplicationCategoryType</key><string>public.app-category.sports</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
+  <key>UTExportedTypeDeclarations</key>
+  <array><dict>
+    <key>UTTypeIdentifier</key><string>club.bogey.file</string>
+    <key>UTTypeDescription</key><string>Bogey-Club-Datei</string>
+    <key>UTTypeConformsTo</key><array><string>public.data</string><string>public.content</string></array>
+    <key>UTTypeIconFile</key><string>AppIcon</string>
+    <key>UTTypeTagSpecification</key><dict>
+      <key>public.filename-extension</key><array><string>bogey</string></array>
+      <key>public.mime-type</key><array><string>application/vnd.bogeyclub</string></array>
+    </dict>
+  </dict></array>
+  <key>CFBundleDocumentTypes</key>
+  <array><dict>
+    <key>CFBundleTypeName</key><string>Bogey-Club-Datei</string>
+    <key>CFBundleTypeRole</key><string>Viewer</string>
+    <key>LSHandlerRank</key><string>Owner</string>
+    <key>LSItemContentTypes</key><array><string>club.bogey.file</string></array>
+    <key>CFBundleTypeIconFile</key><string>AppIcon</string>
+  </dict></array>
   <key>NSHumanReadableCopyright</key><string>© 2026 Marwaeck. Alle Rechte vorbehalten.</string>
 </dict>
 </plist>

@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 import BogeyCore
 import BogeyScan
 
@@ -7,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
     private var web: WebController?
     private var store: Store?
+    /// Dateien, die vor dem Start der Oberfläche geöffnet wurden (Doppelklick auf eine .bogey-Datei)
+    private var pendingOpen: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildMenu()
@@ -27,6 +30,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let web = WebController(store: store!)
         self.web = web
+        pendingOpen.forEach { web.openFile($0) }
+        pendingOpen = []
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 820),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
@@ -48,6 +53,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
+    // MARK: Bogey-Dateien öffnen (Finder, „Öffnen mit“, aufs Dock-Symbol ziehen)
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        let files = urls.filter { ["bogey", "json"].contains($0.pathExtension.lowercased()) }
+        guard let web else { pendingOpen += files; return }
+        files.forEach { web.openFile($0) }
+        window?.makeKeyAndOrderFront(nil)
+    }
+
+    @objc private func openBogeyFile() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        var types: [UTType] = [.json]
+        if let bogey = UTType("club.bogey.file") ?? UTType(filenameExtension: "bogey") { types.insert(bogey, at: 0) }
+        panel.allowedContentTypes = types
+        panel.message = "Bogey-Datei oder Backup wählen"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        web?.openFile(url)
+    }
+
     // MARK: Menüs
 
     private func buildMenu() {
@@ -60,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let auto = app.addItem(withTitle: "Automatisch nach Updates suchen", action: #selector(toggleAutoUpdate(_:)), keyEquivalent: "")
         auto.state = Updater.shared.automatic ? .on : .off
         app.addItem(.separator())
+        app.addItem(withTitle: "Bogey-Datei öffnen …", action: #selector(openBogeyFile), keyEquivalent: "o")
         app.addItem(withTitle: "Datenordner im Finder zeigen", action: #selector(showDataFolder), keyEquivalent: "")
         app.addItem(withTitle: "Lizenz …", action: #selector(showLicense), keyEquivalent: "")
         app.addItem(withTitle: "Lizenzen der Bausteine …", action: #selector(showThirdParty), keyEquivalent: "")

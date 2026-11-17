@@ -21,6 +21,23 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Bogey-Dateien (.bogey) öffnen: aus Dateien, Downloads, WhatsApp, Mail … -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/vnd.bogeyclub" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+            <!-- „Teilen an Bogey Club“ -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.bogeyclub" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
         </activity>
 
         <!-- Kamera-Fotos (Scorekarte, Spielerbild) landen kurz im Cache der App -->

@@ -66,10 +66,14 @@ Die [Web-App]({{ "/app/" | relative_url }}) läuft direkt im Browser – ohne In
 
 Jede Version kann ein Backup schreiben und einspielen:
 
-1. In der alten Version **Spieler → Daten-Backup → Backup herunterladen** (Spieler- und Luftbilder sind mit drin).
-2. In der neuen Version **Spieler → Daten-Backup → Backup einspielen …** und bestätigen.
+1. In der alten Version **Spieler → Daten-Backup → Backup herunterladen** – das ergibt eine Bogey-Datei (`.bogey`), Spieler- und Luftbilder sind mit drin.
+2. In der neuen Version die Datei antippen bzw. doppelklicken – oder **Spieler → Daten-Backup → Datei einspielen …** – und bestätigen.
 
 Einträge mit gleicher ID werden überschrieben, neue ergänzt – gelöscht wird nichts.
+
+## Runde an Freunde schicken
+
+Öffne die Runde und tippe auf **Als Datei teilen** (iPhone: in der Rundenliste die Runde nach rechts wischen → **Teilen**). Es entsteht eine kleine Bogey-Datei mit der Runde, den Spielern und dem Platz – per WhatsApp, Mail oder AirDrop verschicken. Wer sie antippt, sieht in Bogey Club eine Vorschau und übernimmt die Runde. Spieler und Plätze, die schon da sind, werden über den Namen zugeordnet und nicht verändert.
 
 ## Scorekarte einlesen
 

@@ -274,7 +274,14 @@ table.card thead tr > :first-child { background: var(--soft); }
   .hint.long:not(.open) { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .round { grid-template-columns: 52px 1fr; gap: 10px; padding: 10px 12px; }
   .thumb { width: 76px; }
-  .pitem .btn { margin-left: auto; }
+  /* Spielerliste: Zeile 1 Bild · Name · Bearbeiten, Zeile 2 Runden und Handicaps */
+  .pitem { column-gap: 10px; row-gap: 4px; padding: 10px 0; }
+  .pitem > .av { order: 0; }
+  .pitem > .n { order: 1; flex: 1 1 calc(100% - 46px - 116px); white-space: normal; overflow: visible; line-height: 1.25; }
+  .pitem > .btn { order: 2; margin-left: auto; min-height: 34px; padding: 0 12px; }
+  .pitem > .hint, .pitem > .hcp-badge { order: 3; font-size: .82rem; }
+  .pitem > .av + .n ~ .hint { margin-left: 46px; }
+  .pitem > .hcp-badge { padding: 1px 8px; }
 }
 </style>
 
@@ -1430,6 +1437,7 @@ function render(force) {
   else m.innerHTML = state.course ? courseEditorHTML() : coursesHTML();
   if (state.tab === "rounds" && state.editor) { renderScanBox(); updateResults(); }
   compactHints(m);
+  if (pendingFile && state.ready) { const f = pendingFile; pendingFile = null; setTimeout(() => readBackupFile(f)); }
 }
 // Lange Erklärtexte auf dem Handy auf zwei Zeilen kürzen, mit „mehr“ zum Aufklappen
 const mobileMQ = window.matchMedia("(max-width: 640px)");
@@ -1484,7 +1492,7 @@ function editorHTML() {
     || `<span class="hint">Noch keine Spieler. Lege sie im Reiter „Spieler“ an oder übernimm sie aus dem Scan.</span>`;
   const hcps = d.entries.map((e, i) => `<label class="f">HCP ${esc(pName(e.playerId))}<input id="hcp-${i}" data-hcp="${i}" inputmode="decimal" value="${String(e.hcp).replace(".", ",")}"></label>`).join("");
   return `<div class="row"><button class="btn ghost" data-act="close-editor">← Runden</button><span class="spacer"></span>
-      ${courseById(d.courseId) && d.entries.length ? `<button class="btn" data-act="round-card">Rundenkarte teilen</button><button class="btn" data-act="round-pdf" id="rd-pdf-btn">Scorekarte als PDF</button>` : ""}
+      ${courseById(d.courseId) && d.entries.length ? `<button class="btn" data-act="round-card">Rundenkarte teilen</button><button class="btn" data-act="round-file" title="Runde als Bogey-Datei an Freunde schicken – sie öffnen sie in ihrer Bogey-Club-App">Als Datei teilen</button><button class="btn" data-act="round-pdf" id="rd-pdf-btn">Scorekarte als PDF</button>` : ""}
       ${d.id ? `<button class="btn danger" data-act="del-round">Runde löschen</button>` : ""}</div>
     <p class="hint" id="rd-pdf-status" hidden></p>
     <div class="panel card-box" id="rd-card" hidden></div>
@@ -2162,56 +2170,213 @@ async function saveRoundCard(d) {
   catch (e) { if (st) st.textContent = e?.code === "declined" ? "Speichern abgebrochen." : "Das Bild konnte nicht gespeichert werden."; }
 }
 
-// ---------- Daten-Backup ----------
+// ---------- Daten-Backup und Bogey-Dateien (.bogey) ----------
+// .bogey = ZIP-Container, von allen Bogey-Club-Apps lesbar:
+//   mimetype          "application/vnd.bogeyclub" (unkomprimiert, als erster Eintrag – erkennt die Datei sofort)
+//   bogey.json        { format:"bogey", version:1, kind:"backup"|"round", app, exportedAt, players, courses, rounds, coursemaps:{key: Karte} }
+//   images/<id>.jpg   Spieler- und Luftbilder als echte Bilddateien
+// Alte JSON-Backups (version 1/2, Bilder als data:-URLs) werden weiterhin gelesen.
+const BOGEY_EXT = ".bogey", BOGEY_MIME = "application/vnd.bogeyclub";
+const ZIP_OK_ID = /^[A-Za-z0-9_\-.~:@+]{1,200}$/;
+
+// --- ZIP: schreiben und lesen (Deflate über CompressionStream, Bilder unkomprimiert) ---
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+async function streamBytes(u8, stream) { return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(stream)).arrayBuffer()); }
+async function zipWrite(files) {   // files: [{ name, data: Uint8Array, deflate }]
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  const now = new Date(), dTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1),
+    dDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data);
+    let body = f.data, method = 0;
+    if (f.deflate && typeof CompressionStream !== "undefined") {
+      try { const z = await streamBytes(f.data, new CompressionStream("deflate-raw")); if (z.length < f.data.length) { body = z; method = 8; } } catch (e) { }
+    }
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, method, true);
+    h.setUint16(10, dTime, true); h.setUint16(12, dDate, true); h.setUint32(14, crc, true);
+    h.setUint32(18, body.length, true); h.setUint32(22, f.data.length, true); h.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(h.buffer), name, body);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, method, true);
+    c.setUint16(12, dTime, true); c.setUint16(14, dDate, true); c.setUint32(16, crc, true); c.setUint32(20, body.length, true);
+    c.setUint32(24, f.data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), name);
+    offset += 30 + name.length + body.length;
+  }
+  const cSize = central.reduce((s, p) => s + p.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+  e.setUint32(12, cSize, true); e.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: BOGEY_MIME });
+}
+async function zipRead(buf) {   // → Map(name → Uint8Array)
+  const u8 = new Uint8Array(buf), v = new DataView(buf), out = new Map();
+  let e = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error("zip");
+  const count = v.getUint16(e + 10, true); let p = v.getUint32(e + 16, true);
+  const dec = new TextDecoder();
+  for (let n = 0; n < count; n++) {
+    if (v.getUint32(p, true) !== 0x02014b50) throw new Error("zip");
+    const method = v.getUint16(p + 10, true), crc = v.getUint32(p + 16, true), csize = v.getUint32(p + 20, true), size = v.getUint32(p + 24, true);
+    const nlen = v.getUint16(p + 28, true), xlen = v.getUint16(p + 30, true), clen = v.getUint16(p + 32, true), lho = v.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nlen));
+    p += 46 + nlen + xlen + clen;
+    if (name.endsWith("/")) continue;
+    const start = lho + 30 + v.getUint16(lho + 26, true) + v.getUint16(lho + 28, true);
+    const raw = u8.subarray(start, start + csize);
+    let data;
+    if (method === 0) data = raw.slice();
+    else if (method === 8) data = await streamBytes(raw, new DecompressionStream("deflate-raw"));
+    else throw new Error("zip-method");
+    if (data.length !== size || crc32(data) !== crc) throw new Error("zip-crc");
+    out.set(name, data);
+  }
+  return out;
+}
+
+// --- Inhalt zusammenstellen ---
+const IMG_EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
+const EXT_IMG = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
+async function blobOf(id) {
+  try { const b = await (await fetch(`/_blob/${id}`)).blob(); return b.size && /^image\//.test(b.type) ? b : null; } catch (e) { return null; }
+}
+const stripDoc = o => { const { uploading, ...r } = o; return r; };
+const fileSlug = v => String(v || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");
+async function bogeyFile(kind, { players, courses, rounds, maps }) {
+  const enc = new TextEncoder(), files = [{ name: "mimetype", data: enc.encode(BOGEY_MIME) }];
+  const doc = { format: "bogey", version: 1, kind, app: "Bogey Club", exportedAt: new Date().toISOString(),
+    players: players.map(stripDoc), courses: courses.map(stripDoc), rounds: rounds.map(stripDoc), coursemaps: maps };
+  files.push({ name: "bogey.json", data: enc.encode(JSON.stringify(doc)), deflate: true });
+  const ids = [...new Set([...players, ...courses].map(x => x.photo).filter(x => x && ZIP_OK_ID.test(x)))];
+  for (const id of ids) {
+    const b = await blobOf(id); if (!b) continue;
+    files.push({ name: `images/${id}.${IMG_EXT[b.type] || "jpg"}`, data: new Uint8Array(await b.arrayBuffer()) });
+  }
+  return zipWrite(files);
+}
+const backupBlob = () => bogeyFile("backup", { players: S.players, courses: S.courses, rounds: S.rounds, maps: { ...MAPS } });
+function roundBlob(r) {
+  const c = courseById(r.courseId), key = c && (MAPS[c.id] ? c.id : mapKeyOf(c));
+  return bogeyFile("round", {
+    players: r.entries.map(e => playerById(e.playerId)).filter(Boolean), courses: c ? [c] : [], rounds: [r],
+    maps: key && MAPS[key] ? { [key]: MAPS[key] } : {}
+  });
+}
+
+// --- Datei lesen (.bogey oder altes JSON) → einheitlicher Inhalt ---
+async function readBogeyFile(file) {
+  const buf = await file.arrayBuffer(), u8 = new Uint8Array(buf);
+  let d, images = {};
+  if (u8[0] === 0x50 && u8[1] === 0x4b) {             // "PK" → .bogey
+    const z = await zipRead(buf), j = z.get("bogey.json");
+    if (!j) throw new Error("format");
+    d = JSON.parse(new TextDecoder().decode(j));
+    if (d?.format !== "bogey") throw new Error("format");
+    if (d.version > 1) throw new Error("newer");
+    for (const [name, data] of z) {
+      const m = name.match(/^images\/([A-Za-z0-9_\-.~:@+]{1,200})\.([a-z]+)$/);
+      if (m && EXT_IMG[m[2]]) images[m[1]] = new Blob([data], { type: EXT_IMG[m[2]] });
+    }
+    d.coursemaps = Object.fromEntries(Object.entries(d.coursemaps || {}).map(([k, m]) => [k, { json: typeof m === "string" ? m : JSON.stringify(m) }]));
+  } else {                                            // altes JSON-Backup
+    d = JSON.parse(new TextDecoder().decode(u8));
+    if (d?.app !== "Bogey Club") throw new Error("format");
+    for (const [k, v] of Object.entries(d.images || {})) if (typeof v === "string" && v.startsWith("data:image/")) images[k] = await (await fetch(v)).blob();
+    d.kind = d.kind === "round" ? "round" : "backup";
+  }
+  if (!Array.isArray(d.players) || !Array.isArray(d.courses) || !Array.isArray(d.rounds)) throw new Error("format");
+  const ok = x => x && typeof x.id === "string" && ZIP_OK_ID.test(x.id);
+  return { kind: d.kind, exportedAt: d.exportedAt, players: d.players.filter(ok), courses: d.courses.filter(ok), rounds: d.rounds.filter(ok),
+    maps: Object.entries(d.coursemaps || {}).filter(([k, v]) => ZIP_OK_ID.test(k) && typeof v?.json === "string"), images };
+}
+
+// Runde von jemand anderem: Spieler und Plätze über den Namen zuordnen, Vorhandenes nie überschreiben
+const normName = s => String(s || "").trim().toLocaleLowerCase("de").normalize("NFD").replace(/[̀-ͯ]/g, "");
+function planRoundImport(f) {
+  const pMap = {}, cMap = {}, newP = [], newC = [];
+  for (const p of f.players) {
+    const hit = playerById(p.id) || S.players.find(x => normName(x.name) === normName(p.name));
+    if (hit) pMap[p.id] = hit.id; else { pMap[p.id] = p.id; newP.push(p); }
+  }
+  for (const c of f.courses) {
+    const same = x => normName(x.name) === normName(c.name) && x.pars.length === c.pars.length && x.pars.every((v, i) => v === c.pars[i]);
+    const hit = courseById(c.id) || S.courses.find(same);
+    if (hit) cMap[c.id] = hit.id; else { cMap[c.id] = c.id; newC.push(c); }
+  }
+  const rounds = f.rounds.map(r => ({ ...r, courseId: cMap[r.courseId] || r.courseId, entries: (r.entries || []).map(e => ({ ...e, playerId: pMap[e.playerId] || e.playerId })) }));
+  return { newP, newC, rounds, matchedP: f.players.length - newP.length, matchedC: f.courses.length - newC.length };
+}
+
+// --- Oberfläche ---
 function backupHTML() {
   const n = S.rounds.length;
   return `<section class="panel" id="backup"><h3>Daten-Backup</h3>
-    <p class="hint">Sichert alle Spieler, Plätze, Runden und Platzkarten in einer Datei (JSON). Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt – gelöscht wird nichts. Spieler- und Luftbilder sind mit in der Datei.</p>
-    <div class="row"><button class="btn primary" data-act="backup-export">Backup herunterladen</button><label class="btn" for="backup-file">Backup einspielen …</label><input type="file" id="backup-file" accept="application/json,.json" hidden></div>
+    <p class="hint">Sichert alle Spieler, Plätze, Runden, Platzkarten und Bilder in einer Bogey-Datei (.bogey). Sie lässt sich in jeder Bogey-Club-App öffnen – Mac, Windows, Android, iPhone und Web-App. Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt – gelöscht wird nichts. Ältere Backups (.json) lassen sich weiter einspielen.</p>
+    <div class="row"><button class="btn primary" data-act="backup-export">Backup herunterladen</button><label class="btn" for="backup-file">Datei einspielen …</label><input type="file" id="backup-file" accept=".bogey,${BOGEY_MIME},.json,application/json,application/zip,application/octet-stream" hidden></div>
     <p class="hint">${S.players.length} Spieler · ${S.courses.length} Plätze · ${n} Runde${n === 1 ? "" : "n"} · ${Object.keys(MAPS).length} Platzkarten</p>
     <div id="backup-status"></div></section>`;
 }
-// Bilder (Spieler, Luftbilder) als data:-URLs mitsichern, damit ein Umzug auf einen anderen Server sie mitnimmt
-async function blobDataUrl(id) {
-  try { const b = await (await fetch(`/_blob/${id}`)).blob(); if (!b.size || !/^image\//.test(b.type)) return null;
-    return await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = no; fr.readAsDataURL(b); }); }
-  catch (e) { return null; }
-}
-async function backupData() {
-  const strip = o => { const { uploading, ...r } = o; return r; };
-  const maps = Object.fromEntries(Object.entries(MAPS).map(([k, m]) => [k, { json: JSON.stringify(m) }]));
-  const ids = [...new Set([...S.players, ...S.courses].map(x => x.photo).filter(Boolean))];
-  const images = {};
-  for (const id of ids) { const u = await blobDataUrl(id); if (u) images[id] = u; }
-  return { app: "Bogey Club", kind: "backup", version: 2, exportedAt: new Date().toISOString(),
-    players: S.players.map(strip), courses: S.courses.map(strip), rounds: S.rounds.map(strip), coursemaps: maps, images };
+async function saveOrShare(blob, filename, say, share = false) {
+  const file = typeof File !== "undefined" ? new File([blob], filename, { type: BOGEY_MIME }) : null;
+  if (share && file && navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: filename }); say("Geteilt."); return; }
+    catch (e) { if (e?.name === "AbortError") { say("Teilen abgebrochen."); return; } }
+  }
+  const dl = window.claude?.use ? await claude.use("downloads").catch(() => null) : null;
+  if (!dl) { say("Speichern ist in dieser Ansicht nicht möglich."); return; }
+  if (share && dl.share) { try { await dl.share({ filename, data: blob }); say(""); return; } catch (e) { } }
+  try { await dl.save({ filename, data: blob }); say("Gespeichert."); }
+  catch (e) { say(e?.code === "declined" ? "Speichern abgebrochen." : "Die Datei konnte nicht gespeichert werden."); }
 }
 async function exportBackup() {
   const st = $("#backup-status"), say = t => st && (st.innerHTML = `<p class="hint">${esc(t)}</p>`);
   say("Backup wird erstellt …");
-  const blob = new Blob([JSON.stringify(await backupData(), null, 1)], { type: "application/json" });
-  const dl = window.claude?.use ? await claude.use("downloads").catch(() => null) : null;
-  if (!dl) { say("Speichern ist in dieser Ansicht nicht möglich. Öffne die Seite in der Claude-App oder auf claude.ai."); return; }
-  try { await dl.save({ filename: `Bogey-Club-Backup-${today()}.json`, data: blob }); say("Backup gespeichert."); }
-  catch (e) { say(e?.code === "declined" ? "Speichern abgebrochen." : "Das Backup konnte nicht gespeichert werden."); }
+  try { await saveOrShare(await backupBlob(), `Bogey-Club-Backup-${today()}${BOGEY_EXT}`, say); }
+  catch (e) { say("Das Backup konnte nicht erstellt werden."); }
 }
-let pendingBackup = null;
+async function exportRoundFile(r) {
+  const st = $("#card-status") || $("#rd-pdf-status"), say = t => { if (st) { st.hidden = false; st.textContent = t; } else toast(t); };
+  say("Bogey-Datei wird erstellt …");
+  try {
+    const c = courseById(r.courseId);
+    await saveOrShare(await roundBlob(r), `Bogey-Club-Runde-${r.date || today()}-${fileSlug(c?.name)}${BOGEY_EXT}`, say, true);
+  } catch (e) { say("Die Datei konnte nicht erstellt werden."); }
+}
+
+let pendingBackup = null, pendingFile = null;
 async function readBackupFile(file) {
+  if (!state.ready) { pendingFile = file; return; }
+  if (state.tab !== "players" || state.player) { state.tab = "players"; state.player = null; state.editor = null; state.course = null; render(true); }
   const st = $("#backup-status");
   pendingBackup = null;
+  st.innerHTML = `<p class="hint">Datei wird gelesen …</p>`;
+  $("#backup")?.scrollIntoView({ behavior: "smooth", block: "start" });
   try {
-    const d = JSON.parse(await file.text());
-    if (d?.app !== "Bogey Club" || !Array.isArray(d.players) || !Array.isArray(d.courses) || !Array.isArray(d.rounds)) throw new Error("format");
-    const ok = x => x && typeof x.id === "string" && /^[A-Za-z0-9_\-.~:@+]{1,200}$/.test(x.id);
-    const pick = (arr, coll) => { const list = arr.filter(ok); const have = new Set(S[coll].map(x => x.id)); return { list, neu: list.filter(x => !have.has(x.id)).length }; };
-    const P = pick(d.players, "players"), C = pick(d.courses, "courses"), R = pick(d.rounds, "rounds");
-    const M = Object.entries(d.coursemaps || {}).filter(([k, v]) => /^[A-Za-z0-9_\-.~:@+]{1,200}$/.test(k) && typeof v?.json === "string");
-    const I = Object.entries(d.images || {}).filter(([k, v]) => typeof v === "string" && v.startsWith("data:image/"));
-    pendingBackup = { P: P.list, C: C.list, R: R.list, M, I };
-    const line = (n, o, w) => `${o.list.length} ${n} (${o.neu} neu, ${o.list.length - o.neu} ${w})`;
-    st.innerHTML = `<p>Backup vom <b>${esc(d.exportedAt ? new Date(d.exportedAt).toLocaleString("de-DE") : "unbekannt")}</b>: ${line("Spieler", P, "überschreiben")}, ${line("Plätze", C, "überschreiben")}, ${line("Runden", R, "überschreiben")}, ${M.length} Platzkarten, ${I.length} Bilder.</p>
-      <div class="row"><button class="btn primary" data-act="backup-apply">Jetzt einspielen</button><button class="btn ghost" data-act="backup-cancel">Abbrechen</button></div>`;
-  } catch (e) { st.innerHTML = `<p class="hint">Diese Datei ist kein Bogey-Club-Backup.</p>`; }
+    const f = await readBogeyFile(file);
+    const nImg = Object.keys(f.images).length;
+    if (f.kind === "round") {
+      const plan = planRoundImport(f);
+      pendingBackup = { kind: "round", P: plan.newP, C: plan.newC, R: plan.rounds, M: f.maps, images: f.images };
+      const r = plan.rounds[0], c = r && (courseById(r.courseId) || plan.newC.find(x => x.id === r.courseId));
+      const names = f.players.map(p => esc(p.name)).join(", ");
+      const exists = plan.rounds.filter(x => S.rounds.some(y => y.id === x.id)).length;
+      st.innerHTML = `<p><b>Runde${r?.date ? ` vom ${fmtDate(r.date)}` : ""}${c ? ` auf ${esc(c.name)}` : ""}</b> mit ${names || "–"}.</p>
+        <p class="hint">${plan.matchedP} Spieler bei dir gefunden${plan.newP.length ? `, ${plan.newP.length} neu (${plan.newP.map(p => esc(p.name)).join(", ")})` : ""}. Platz ${plan.newC.length ? "wird neu angelegt" : "ist schon vorhanden"}.${exists ? " Diese Runde gibt es schon – sie wird aktualisiert." : ""} Deine Spieler und Plätze werden nicht verändert.</p>
+        <div class="row"><button class="btn primary" data-act="backup-apply">Runde übernehmen</button><button class="btn ghost" data-act="backup-cancel">Abbrechen</button></div>`;
+    } else {
+      const pick = (list, coll) => { const have = new Set(S[coll].map(x => x.id)); return { list, neu: list.filter(x => !have.has(x.id)).length }; };
+      const P = pick(f.players, "players"), C = pick(f.courses, "courses"), R = pick(f.rounds, "rounds");
+      pendingBackup = { kind: "backup", P: P.list, C: C.list, R: R.list, M: f.maps, images: f.images };
+      const line = (n, o) => `${o.list.length} ${n} (${o.neu} neu, ${o.list.length - o.neu} überschreiben)`;
+      st.innerHTML = `<p>Backup vom <b>${esc(f.exportedAt ? new Date(f.exportedAt).toLocaleString("de-DE") : "unbekannt")}</b>: ${line("Spieler", P)}, ${line("Plätze", C)}, ${line("Runden", R)}, ${f.maps.length} Platzkarten, ${nImg} Bilder.</p>
+        <div class="row"><button class="btn primary" data-act="backup-apply">Jetzt einspielen</button><button class="btn ghost" data-act="backup-cancel">Abbrechen</button></div>`;
+    }
+  } catch (e) {
+    st.innerHTML = `<p class="hint">${e?.message === "newer" ? "Diese Datei stammt aus einer neueren Bogey-Club-Version. Bitte zuerst die App aktualisieren." : "Diese Datei ist keine Bogey-Datei und kein Bogey-Club-Backup."}</p>`;
+  }
 }
 async function applyBackup() {
   const st = $("#backup-status"), b = pendingBackup; if (!b) return;
@@ -2219,24 +2384,36 @@ async function applyBackup() {
   let n = 0;
   try {
     // Bilder: fehlen sie hier, neu hochladen und die IDs in Spielern und Plätzen umschreiben
-    const remap = {};
-    for (const [id, url] of b.I || []) {
-      if (!assetsApi) break;
-      try { const r = await fetch(`/_blob/${id}`, { method: "HEAD" }); if (r.ok) continue; } catch (e) { }
-      try { const res = await assetsApi.upload(await (await fetch(url)).blob()); remap[id] = res.id; } catch (e) { }
+    const remap = {}, used = new Set([...b.P, ...b.C].map(x => x.photo).filter(Boolean));
+    for (const [id, blob] of Object.entries(b.images || {})) {
+      if (!assetsApi || !used.has(id)) continue;
+      if (await blobOf(id)) continue;
+      try { const res = await assetsApi.upload(blob); remap[id] = res.id; } catch (e) { }
     }
     const fix = x => remap[x.photo] ? { ...x, photo: remap[x.photo] } : x;
-    b.P = b.P.map(fix); b.C = b.C.map(fix);
-    for (const p of b.P) { await save("players", p); n++; }
-    for (const c of b.C) { await save("courses", c); n++; }
+    for (const p of b.P.map(fix)) { await save("players", p); n++; }
+    for (const c of b.C.map(fix)) { await save("courses", c); n++; }
     for (const r of b.R) { await save("rounds", r); n++; }
-    if (db) for (const [k, v] of b.M) { await db.collection("coursemaps").doc(k).set({ json: v.json, source: "OpenStreetMap", attr: "© OpenStreetMap-Mitwirkende" }); n++; }
-    else for (const [k, v] of b.M) { try { MAPS[k] = JSON.parse(v.json); } catch (e) { } }
+    for (const [k, v] of b.M) {
+      if (b.kind === "round" && MAPS[k]) continue;
+      if (db) { await db.collection("coursemaps").doc(k).set({ json: v.json, source: "OpenStreetMap", attr: "© OpenStreetMap-Mitwirkende" }); n++; }
+      else { try { MAPS[k] = JSON.parse(v.json); n++; } catch (e) { } }
+    }
     pendingBackup = null;
-    toast(`${n} Einträge eingespielt.`);
-    render(true);
+    toast(b.kind === "round" ? "Runde übernommen." : `${n} Einträge eingespielt.`);
+    if (b.kind === "round" && b.R[0]) { state.tab = "rounds"; openRound(b.R[0].id); } else render(true);
   } catch (e) { st.innerHTML = `<p class="hint">Fehler beim Einspielen nach ${n} Einträgen. Bitte erneut versuchen.</p>`; }
 }
+// Von außen geöffnete Datei (Doppelklick, „Öffnen mit“, Teilen an die App): Apps rufen window.bogeyOpenFile auf
+window.bogeyOpenFile = (name, data) => {
+  let blob = data;
+  if (typeof data === "string") { const bin = atob(data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); blob = new Blob([u8]); }
+  else if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) blob = new Blob([data]);
+  const file = blob instanceof File ? blob : new File([blob], name || `Datei${BOGEY_EXT}`);
+  readBackupFile(file);
+};
+(window.__bogeyOpenQueue || []).forEach(([n, d]) => window.bogeyOpenFile(n, d));
+window.__bogeyOpenQueue = { push: ([n, d]) => window.bogeyOpenFile(n, d) };
 
 // ---------- Ereignisse ----------
 const confirmArm = {};
@@ -2272,6 +2449,7 @@ $("#main").addEventListener("click", async e => {
     case "review-pdf": exportReviewPDF(); break;
     case "round-pdf": exportRoundPDF(state.editor); break;
     case "round-card": showRoundCard(state.editor); break;
+    case "round-file": exportRoundFile(state.editor); break;
     case "card-share": shareRoundCard(state.editor); break;
     case "card-save": saveRoundCard(state.editor); break;
     case "card-close": { const bx = $("#rd-card"); if (bx) { bx.hidden = true; bx.innerHTML = ""; } break; }

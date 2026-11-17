@@ -142,6 +142,13 @@
     }
   };
 
+  // Installierte Web-App: per Doppelklick geöffnete .bogey-Dateien (File Handling API, Chrome/Edge)
+  if ("launchQueue" in window) window.launchQueue.setConsumer(async params => {
+    for (const h of params.files || []) {
+      try { const f = await h.getFile(); (window.__bogeyOpenQueue = window.__bogeyOpenQueue || []).push([f.name, f]); } catch (e) { }
+    }
+  });
+
   window.claude = {
     async use(name) {
       if (name === "db") return db;

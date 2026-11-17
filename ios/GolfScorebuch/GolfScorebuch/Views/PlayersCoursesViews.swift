@@ -174,6 +174,7 @@ struct MoreView: View {
                 NavigationLink { ReviewView() } label: { Label("Saisonrückblick", systemImage: "calendar") }
                 NavigationLink { PlayersView() } label: { Label("Spieler", systemImage: "person.2") }
                 NavigationLink { CoursesView() } label: { Label("Plätze", systemImage: "map") }
+                NavigationLink { BackupView() } label: { Label("Daten-Backup", systemImage: "externaldrive") }
             }
             .navigationTitle("Mehr")
         }

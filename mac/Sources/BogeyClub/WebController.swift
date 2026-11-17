@@ -46,6 +46,32 @@ final class WebController: NSViewController, WKNavigationDelegate, WKUIDelegate,
 
     func reload() { webView.load(URLRequest(url: Self.origin)) }
 
+    private var pageLoaded = false
+    private var pendingFiles: [(name: String, base64: String)] = []
+
+    /// Übergibt eine geöffnete Bogey-Datei (oder ein altes JSON-Backup) an die Oberfläche: window.bogeyOpenFile(name, base64)
+    func openFile(_ url: URL) {
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url) else { return }
+        pendingFiles.append((url.lastPathComponent, data.base64EncodedString()))
+        if pageLoaded { flushFiles() }
+    }
+
+    private func flushFiles() {
+        let files = pendingFiles; pendingFiles = []
+        for f in files {
+            let name = String(data: try! JSONSerialization.data(withJSONObject: [f.name]), encoding: .utf8)!.dropFirst().dropLast()
+            let js = "(window.bogeyOpenFile ? window.bogeyOpenFile(\(name), \"\(f.base64)\") : (window.__bogeyOpenQueue = window.__bogeyOpenQueue || []).push([\(name), \"\(f.base64)\"]))"
+            webView.evaluateJavaScript(js, completionHandler: nil)
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        pageLoaded = true
+        flushFiles()
+    }
+
     func zoom(to value: CGFloat) {
         webView.pageZoom = min(2, max(0.6, value))
         UserDefaults.standard.set(Double(webView.pageZoom), forKey: "pageZoom")
@@ -70,7 +96,7 @@ final class WebController: NSViewController, WKNavigationDelegate, WKUIDelegate,
         return nil
     }
 
-    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { reload() }
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { pageLoaded = false; reload() }
 
     // MARK: Datei wählen (<input type="file">)
 
