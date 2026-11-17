@@ -295,7 +295,7 @@ details.scan-more summary::-webkit-details-marker { display: none; }
   .wrap { max-width: 1320px; }
   .split { display: grid; grid-template-columns: minmax(340px, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .split-l, .split-r { display: grid; gap: 14px; min-width: 0; }
-  .split-l { position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; padding-right: 4px; }
+  .split-r { position: sticky; top: 64px; }
   .split-l .round[data-id] { padding: 10px 12px; }
   .split-l .round.cur { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
   body[data-tab="stats"] #main, body[data-tab="review"] #main, body[data-tab="ranking"] #main, body[data-tab="forecast"] #main {
@@ -2290,6 +2290,60 @@ const CARD_C = { green: "#1c6641", greenDark: "#134a2f", ink: "#142019", muted: 
   av: ["#1c6641", "#c2410c", "#2563eb", "#a21caf", "#a16207"] };
 const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
 
+// Ohne Luftbild/Karte: stilisierter Platz als Hintergrund, darauf die Score-Verteilung je Spieler
+function drawScoreBand(g, d, c, X, Y, W, H) {
+  const F = "'Barlow Condensed', 'Arial Narrow', sans-serif", B = "'Public Sans', system-ui, sans-serif";
+  g.save(); g.beginPath(); g.rect(X, Y, W, H); g.clip();
+  const bg = g.createLinearGradient(0, Y, 0, Y + H); bg.addColorStop(0, "#e3efdc"); bg.addColorStop(1, "#c9e0bd");
+  g.fillStyle = bg; g.fillRect(X, Y, W, H);
+  // Fairways als weiche Bahnen, Grün mit Fahne, ein paar Bunker
+  const fw = (pts, w, col) => { g.strokeStyle = col; g.lineWidth = w; g.lineCap = "round"; g.lineJoin = "round"; g.beginPath(); g.moveTo(...pts[0]); for (let i = 1; i < pts.length; i += 3) g.bezierCurveTo(...pts[i], ...pts[i + 1], ...pts[i + 2]); g.stroke(); };
+  fw([[X - 40, Y + H * .95], [X + W * .2, Y + H * .55], [X + W * .45, Y + H * 1.05], [X + W * .62, Y + H * .62]], 120, "rgba(134,196,124,.45)");
+  fw([[X + W * .55, Y - 40], [X + W * .75, Y + H * .25], [X + W * .95, Y + H * .1], [X + W + 60, Y + H * .45]], 110, "rgba(134,196,124,.35)");
+  // Grün mit Fahne oben rechts in der Titelzeile, außerhalb der Balken
+  const gx = X + W - 130, gy = Y + 40;
+  g.fillStyle = "rgba(95,184,106,.6)"; g.beginPath(); g.ellipse(gx, gy, 58, 22, -.15, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "rgba(241,230,191,.95)"; [[gx - 84, gy + 8, 20, 10], [gx + 70, gy - 6, 14, 8], [X + W * .3, Y + H * .8, 28, 14]].forEach(([x, y, rx, ry]) => { g.beginPath(); g.ellipse(x, y, rx, ry, .3, 0, Math.PI * 2); g.fill(); });
+  g.strokeStyle = "#24382c"; g.lineWidth = 3; g.beginPath(); g.moveTo(gx + 4, gy + 4); g.lineTo(gx + 4, gy - 34); g.stroke();
+  g.fillStyle = CARD_C.gold; g.beginPath(); g.moveTo(gx + 4, gy - 34); g.lineTo(gx + 36, gy - 26); g.lineTo(gx + 4, gy - 18); g.fill();
+  // Score-Verteilung
+  const n = c.pars.length;
+  const cats = [["Birdie+", "#e2b230", v => v <= -1], ["Par", "#1c6641", v => v === 0], ["Bogey", "#7fae8c", v => v === 1], ["Doppel+", "#c2410c", v => v >= 2], ["Strich", "#9aa59e", null]];
+  const rows = d.entries.filter(e => playerById(e.playerId)).map(e => {
+    const st = fit(e.strokes, n), counts = cats.map(() => 0);
+    st.forEach((s, i) => { if (!s) { counts[4]++; return; } const k = cats.findIndex(([, , t]) => t && t(s - c.pars[i])); counts[k]++; });
+    return { p: playerById(e.playerId), res: result(e, c), counts, st };
+  }).sort((a, b) => b.res.pts - a.res.pts || a.res.gross - b.res.gross);
+  const padX = 56, labelW = 210, top = Y + 74, bottom = Y + H - 62;
+  const rowH = Math.min(78, (bottom - top) / Math.max(1, rows.length)), barH = Math.min(44, rowH * .62);
+  g.fillStyle = CARD_C.green; g.font = `700 30px ${F}`; g.textBaseline = "alphabetic"; g.textAlign = "left";
+  g.fillText(`SCORE-VERTEILUNG · ${n} LÖCHER`, padX, Y + 50);
+  const barX = padX + labelW, barW = W - barX - padX - 120;
+  rows.forEach((r, i) => {
+    const cy = top + i * rowH + rowH / 2;
+    g.fillStyle = CARD_C.ink; g.font = `700 ${Math.round(barH * .78)}px ${F}`; g.textBaseline = "middle";
+    let nm = r.p.name; while (nm.length > 3 && g.measureText(nm).width > labelW - 16) nm = nm.slice(0, -2) + "…";
+    g.fillText(nm, padX, cy);
+    // Balken
+    g.fillStyle = "rgba(255,255,255,.7)"; g.beginPath(); g.roundRect ? g.roundRect(barX, cy - barH / 2, barW, barH, 8) : g.rect(barX, cy - barH / 2, barW, barH); g.fill();
+    let x = barX;
+    r.counts.forEach((k, ci) => {
+      if (!k) return;
+      const w = barW * k / n;
+      g.fillStyle = cats[ci][1]; g.fillRect(x, cy - barH / 2, w, barH);
+      if (w > 30) { g.fillStyle = ci === 0 || ci === 2 || ci === 4 ? "#142019" : "#fff"; g.font = `700 ${Math.round(barH * .55)}px ${F}`; g.textAlign = "center"; g.fillText(String(k), x + w / 2, cy + 1); g.textAlign = "left"; }
+      x += w;
+    });
+    // Par oder besser
+    const good = r.counts[0] + r.counts[1];
+    g.fillStyle = CARD_C.ink; g.font = `700 ${Math.round(barH * .62)}px ${F}`; g.textAlign = "right";
+    g.fillText(`${good}×`, W - padX, cy - 6); g.font = `500 15px ${B}`; g.fillStyle = CARD_C.muted; g.fillText("Par oder besser", W - padX, cy + barH * .42); g.textAlign = "left";
+  });
+  // Legende
+  let lx = padX; g.font = `600 20px ${B}`; g.textBaseline = "middle";
+  cats.forEach(([label, col]) => { g.fillStyle = col; g.beginPath(); g.roundRect ? g.roundRect(lx, Y + H - 34, 18, 18, 4) : g.rect(lx, Y + H - 34, 18, 18); g.fill(); g.fillStyle = CARD_C.ink; g.fillText(label, lx + 26, Y + H - 24); lx += g.measureText(label).width + 62; });
+  g.restore();
+}
 async function roundCardBlob(d) {
   const c = courseById(d.courseId); if (!c) return null;
   const W = 1080, H = 1350, F = "'Barlow Condensed', 'Arial Narrow', sans-serif", B = "'Public Sans', system-ui, sans-serif";
@@ -2318,12 +2372,7 @@ async function roundCardBlob(d) {
   const IY = HH, IH = 400;
   const img = await courseImageJpeg(c, W, IH, 1.25);
   if (img) { try { g.drawImage(await loadImg(img), 0, IY, W, IH); } catch (e) { } }
-  else {
-    const gr = g.createLinearGradient(0, IY, 0, IY + IH); gr.addColorStop(0, "#cfe3c4"); gr.addColorStop(1, "#86c47c");
-    g.fillStyle = gr; g.fillRect(0, IY, W, IH);
-    g.strokeStyle = "rgba(20,32,25,.35)"; g.lineWidth = 6; g.beginPath(); g.moveTo(W / 2, IY + 300); g.lineTo(W / 2, IY + 110); g.stroke();
-    g.fillStyle = CARD_C.gold; g.beginPath(); g.moveTo(W / 2, IY + 110); g.lineTo(W / 2 + 70, IY + 135); g.lineTo(W / 2, IY + 160); g.fill();
-  }
+  else drawScoreBand(g, d, c, 0, IY, W, IH);
   g.fillStyle = CARD_C.gold; g.fillRect(0, IY + IH, W, 8);
 
   // Spieler, sortiert nach Stableford
