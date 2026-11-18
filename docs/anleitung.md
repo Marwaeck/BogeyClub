@@ -1,7 +1,7 @@
 ---
 title: Anleitung
 permalink: /anleitung/
-lead: Installieren, Daten umziehen und Scorekarten einlesen – für Mac, Windows, Android, iPhone und Web.
+lead: Installieren, Daten umziehen und Scorekarten einlesen – für Mac, Windows, Android und Web.
 ---
 
 ## Mac {#mac}
@@ -44,10 +44,6 @@ Selbst bauen (Node nötig): `npm run windows` → `windows/dist/`.
 
 Neue Versionen meldet die App von selbst – **Herunterladen** tippen und die APK wieder öffnen; die Daten bleiben.
 
-## iPhone {#iphone}
-
-Das Projekt `ios/GolfScorebuch/GolfScorebuch.xcodeproj` in Xcode öffnen, das eigene iPhone wählen und auf **Ausführen** tippen. Die Scorekarte scannt der eingebaute Dokumentenscanner, gelesen wird mit Apples Texterkennung direkt auf dem Gerät.
-
 ## Web {#web}
 
 Die [Web-App]({{ "/app/" | relative_url }}) läuft direkt im Browser – ohne Installation, ohne Anmeldung, auf Wunsch über **Zum Home-Bildschirm** wie eine App.
@@ -73,7 +69,7 @@ Einträge mit gleicher ID werden überschrieben, neue ergänzt – gelöscht wir
 
 ## Runde an Freunde schicken
 
-Öffne die Runde und tippe auf **Als Datei teilen** (iPhone: in der Rundenliste die Runde nach rechts wischen → **Teilen**). Es entsteht eine kleine Bogey-Datei mit der Runde, den Spielern und dem Platz – per WhatsApp, Mail oder AirDrop verschicken. Wer sie antippt, sieht in Bogey Club eine Vorschau und übernimmt die Runde. Spieler und Plätze, die schon da sind, werden über den Namen zugeordnet und nicht verändert.
+Öffne die Runde und tippe auf **Als Datei teilen**. Es entsteht eine kleine Bogey-Datei mit der Runde, den Spielern und dem Platz – per WhatsApp, Mail oder AirDrop verschicken. Wer sie antippt, sieht in Bogey Club eine Vorschau und übernimmt die Runde. Spieler und Plätze, die schon da sind, werden über den Namen zugeordnet und nicht verändert.
 
 ## Scorekarte einlesen
 
@@ -81,7 +77,7 @@ Einträge mit gleicher ID werden überschrieben, neue ergänzt – gelöscht wir
 
 | Version | Texterkennung | Ohne Internet |
 |---|---|---|
-| iPhone, Mac | Apple Vision | ja |
+| Mac | Apple Vision | ja |
 | Windows | Tesseract (in der App enthalten) | ja |
 | Web (Browser) | Tesseract im Browser | Bild bleibt im Browser |
 

@@ -10,10 +10,6 @@
   text: Für Android 8 oder neuer. APK aufs Handy laden und installieren. Daten auf dem Handy, Foto-Einlesen offline, Hinweis auf Updates.
   file: Bogey-Club-android-<Version>.apk
   anchor: android
-- name: iPhone
-  text: SwiftUI-App mit Dokumentenscanner. Aus dem Projekt in Xcode auf das eigene iPhone installieren.
-  file: Xcode-Projekt
-  anchor: iphone
 - name: Web
   text: Läuft direkt im Browser, ohne Installation und ohne Anmeldung. Daten bleiben im Browser, auch offline nutzbar.
   file: Im Browser, ohne Download

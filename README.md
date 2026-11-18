@@ -10,10 +10,9 @@ Privates Golf-Scorebuch: Scorekarten erfassen (Foto, PDF oder TAG-Heuer-Link), m
 |---|---|
 | `web/` | Web-App als eine HTML-Datei (läuft als Claude-Artefakt mit Datenbank, Downloads, Bild-Upload). `index.html` + Logo. |
 | `mac/` | Mac-App: dieselbe Oberfläche wie `web/`, aber ohne Claude – Daten auf dem Mac, Scorekarten-Erkennung offline mit Apple Vision. |
-| `BogeyScan/` | Gemeinsame Scorekarten-Erkennung für iPhone- und Mac-App (Swift-Paket): Apple Vision liest den Text auf dem Gerät, danach werden Lochnummern als Spaltenraster genutzt, leere Zellen nachgelesen und Par, Lochvorgaben und Spielerzeilen erkannt. Tests: `cd BogeyScan && swift test`. |
+| `BogeyScan/` | Scorekarten-Erkennung der Mac-App (Swift-Paket): Apple Vision liest den Text auf dem Gerät, danach werden Lochnummern als Spaltenraster genutzt, leere Zellen nachgelesen und Par, Lochvorgaben und Spielerzeilen erkannt. Tests: `cd BogeyScan && swift test`. |
 | `windows/` | Windows-App (Electron): dieselbe Oberfläche, Daten auf dem PC, Scorekarten-Erkennung offline mit mitgelieferter Texterkennung (Tesseract). |
 | `android/` | Android-App (WebView, Kotlin): dieselbe Oberfläche, Daten auf dem Handy, Scorekarten-Erkennung offline mit mitgelieferter Texterkennung (Tesseract). Die APK baut GitHub Actions. |
-| `ios/GolfScorebuch/` | iOS-App in SwiftUI + SwiftData, Scorekarten-Erkennung offline mit Apple Vision (über `BogeyScan`). In Xcode öffnen: `GolfScorebuch.xcodeproj`. |
 | `osm/` | Platzkarten aus OpenStreetMap: `fetch.sh` lädt die Rohdaten über Overpass, `osm2map.py` wandelt sie in kompakte Karten-JSON um, `render.js` zeichnet sie als SVG. |
 | `server/` | Bausteine der Web-App im Browser: `runtime.js` ersetzt die Claude-Laufzeit (Datenbank und Bilder im Browser, Downloads, Scorekarte lesen), `sw.js` (Service Worker: Bilder, Offline), `ocr.js` – die Scorekarten-Erkennung im Browser (auch in Windows- und Android-App), `icons/`. |
 | `docs/app/` | Von `build.mjs` erzeugt: die Web-App auf GitHub Pages. Nicht von Hand ändern. |
@@ -39,7 +38,7 @@ Die Karte wird in der Web-App in der Datenbank-Collection `coursemaps` gespeiche
 
 ## Daten
 
-Runden, Spieler und Plätze liegen nicht im Repo. Sicherung in jeder App über **Spieler → Daten-Backup** (iPhone: **Mehr → Daten-Backup**).
+Runden, Spieler und Plätze liegen nicht im Repo. Sicherung in jeder App über **Spieler → Daten-Backup**.
 
 ## Simulator (GSPro)
 
@@ -63,8 +62,8 @@ Aufbau – ein ZIP-Container:
 | `images/<id>.jpg` | Spieler- und Luftbilder (ID wie im Feld `photo`) |
 
 - **`kind: "backup"`** – alles. Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt, gelöscht wird nichts.
-- **`kind: "round"`** – eine Runde mit ihren Spielern, dem Platz und ggf. der Platzkarte („Als Datei teilen“ in der Runde; iPhone: Runde nach rechts wischen). Beim Empfänger werden Spieler und Plätze über ID oder Namen zugeordnet und nie verändert; nur Fehlendes wird angelegt.
-- Schreiben/Lesen: `web/index.html` (Abschnitt „Daten-Backup und Bogey-Dateien“, für Web, Claude, Mac, Windows, Android) und `BogeyScan/Sources/BogeyScan/BogeyFile.swift` (iPhone-App, mit Tests). Ältere JSON-Backups werden weiter gelesen.
+- **`kind: "round"`** – eine Runde mit ihren Spielern, dem Platz und ggf. der Platzkarte („Als Datei teilen“ in der Runde). Beim Empfänger werden Spieler und Plätze über ID oder Namen zugeordnet und nie verändert; nur Fehlendes wird angelegt.
+- Schreiben/Lesen: `web/index.html` (Abschnitt „Daten-Backup und Bogey-Dateien“, für Web, Claude, Mac, Windows, Android) und `BogeyScan/Sources/BogeyScan/BogeyFile.swift` (Swift, mit Tests). Ältere JSON-Backups werden weiter gelesen.
 - Geöffnete Dateien reichen die Apps über `window.bogeyOpenFile(name, base64)` an die Oberfläche weiter (Mac: `WebController.openFile`, Windows: `main.js`, Android: `MainActivity.handleOpenIntent`, installierte Web-App: File Handling API in `server/runtime.js`).
 
 ## Mac-App (ohne Claude)
@@ -83,7 +82,7 @@ npm run mac          # oder ./mac/build.sh  → mac/build/Bogey Club.app
 cd mac && swift test # Tests für Datenablage und Scorekarten-Erkennung
 ```
 
-Das Programm-Icon (Scorekarte mit Bogey-Kästchen, Bleistift, Golfball; Club-Farben, Schrift Barlow Condensed) zeichnet `mac/icon/make-icon.swift` für alle Plattformen: Mac (`mac/AppIcon.icns`), iPhone (`AppIcon.appiconset/icon.png`) , Web-App (`server/icons/`) und das Logo im App-Kopf und in den PDFs (`web/bogey-club-logo.png`). Neu erzeugen: `swift mac/icon/make-icon.swift && iconutil -c icns mac/build/AppIcon.iconset -o mac/AppIcon.icns`, danach `npm run build` und `npm run mac`.
+Das Programm-Icon (Scorekarte mit Bogey-Kästchen, Bleistift, Golfball; Club-Farben, Schrift Barlow Condensed) zeichnet `mac/icon/make-icon.swift` für alle Plattformen: Mac (`mac/AppIcon.icns`), Web-App (`server/icons/`) und das Logo im App-Kopf und in den PDFs (`web/bogey-club-logo.png`). Neu erzeugen: `swift mac/icon/make-icon.swift && iconutil -c icns mac/build/AppIcon.iconset -o mac/AppIcon.icns`, danach `npm run build` und `npm run mac`.
 
 Die App danach in den Ordner „Programme“ ziehen. Sie ist nur lokal signiert; beim ersten Öffnen auf einem anderen Mac per Rechtsklick → „Öffnen“ starten.
 
@@ -158,7 +157,6 @@ Selbst bauen (Node, JDK 17 und Android-SDK nötig): `npm run android` → `andro
 
 | Wo | Womit | Offline |
 |---|---|---|
-| iPhone-App | Apple Vision über `BogeyScan` | ja |
 | Mac-App | Apple Vision über `BogeyScan` | ja |
 | Windows-App | Tesseract.js in `server/ocr.js`, mitgeliefert | ja |
 | Android-App | Tesseract.js in `server/ocr.js`, mitgeliefert | ja |
