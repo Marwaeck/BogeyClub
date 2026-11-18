@@ -1449,8 +1449,8 @@ function histCell(hh) {
 }
 
 // ---------- Speicher ----------
-const S = { players: [], courses: [], rounds: [] };
-const COLLS = ["players", "courses", "rounds"];
+const S = { players: [], courses: [], rounds: [], simrounds: [] };
+const COLLS = ["players", "courses", "rounds", "simrounds"];   // simrounds: Simulator (GSPro), zählt nirgends mit
 let db = null, mode = null;
 const courseById = id => S.courses.find(c => c.id === id);
 const playerById = id => S.players.find(p => p.id === id);
@@ -1532,11 +1532,11 @@ const state = { tab: "rounds", ready: false, editor: null, course: null, player:
 function editing() { return (state.tab === "rounds" && state.editor) || (state.tab === "courses" && state.course) || (state.tab === "players" && state.player); }
 
 // Fünf Reiter unten; Statistik (Saison/Rückblick) und Mehr (Spieler/Plätze/Backup) haben Unterseiten
-const TAB_GROUP = { rounds: "rounds", stats: "stats", review: "stats", ranking: "ranking", forecast: "forecast", players: "more", courses: "more", backup: "more" };
-const SUBTABS = { stats: [["stats", "Saison"], ["review", "Rückblick"]], more: [["players", "Spieler"], ["courses", "Plätze"], ["backup", "Backup"]] };
+const TAB_GROUP = { rounds: "rounds", stats: "stats", review: "stats", ranking: "ranking", forecast: "forecast", players: "more", courses: "more", backup: "more", sim: "stats" };
+const SUBTABS = { stats: [["stats", "Saison"], ["review", "Rückblick"], ["sim", "Simulator"]], more: [["players", "Spieler"], ["courses", "Plätze"], ["backup", "Backup"]] };
 const lastSub = { stats: "stats", more: "players" };
 function goTab(t) {
-  state.tab = t; state.editor = null; state.view = null; state.course = null; state.player = null; state.scan = null;
+  state.tab = t; state.editor = null; state.view = null; state.course = null; state.player = null; state.scan = null; state.simView = null;
   if (SUBTABS[TAB_GROUP[t]]) lastSub[TAB_GROUP[t]] = t;
   render(true); window.scrollTo(0, 0);
 }
@@ -1569,6 +1569,7 @@ function render(force) {
   else if (state.tab === "ranking") html = rankingHTML();
   else if (state.tab === "review") html = reviewHTML();
   else if (state.tab === "backup") html = backupHTML();
+  else if (state.tab === "sim") html = simHTML();
   else html = state.course ? courseEditorHTML() : coursesHTML();
   m.innerHTML = subnavHTML() + html;
   document.body.dataset.tab = state.tab;
@@ -2528,10 +2529,10 @@ async function blobOf(id) {
 }
 const stripDoc = o => { const { uploading, ...r } = o; return r; };
 const fileSlug = v => String(v || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");
-async function bogeyFile(kind, { players, courses, rounds, maps }) {
+async function bogeyFile(kind, { players, courses, rounds, maps, simrounds }) {
   const enc = new TextEncoder(), files = [{ name: "mimetype", data: enc.encode(BOGEY_MIME) }];
   const doc = { format: "bogey", version: 1, kind, app: "Bogey Club", exportedAt: new Date().toISOString(),
-    players: players.map(stripDoc), courses: courses.map(stripDoc), rounds: rounds.map(stripDoc), coursemaps: maps };
+    players: players.map(stripDoc), courses: courses.map(stripDoc), rounds: rounds.map(stripDoc), coursemaps: maps, ...(simrounds?.length ? { simrounds: simrounds.map(stripDoc) } : {}) };
   files.push({ name: "bogey.json", data: enc.encode(JSON.stringify(doc)), deflate: true });
   const ids = [...new Set([...players, ...courses].map(x => x.photo).filter(x => x && ZIP_OK_ID.test(x)))];
   for (const id of ids) {
@@ -2540,7 +2541,7 @@ async function bogeyFile(kind, { players, courses, rounds, maps }) {
   }
   return zipWrite(files);
 }
-const backupBlob = () => bogeyFile("backup", { players: S.players, courses: S.courses, rounds: S.rounds, maps: { ...MAPS } });
+const backupBlob = () => bogeyFile("backup", { players: S.players, courses: S.courses, rounds: S.rounds, maps: { ...MAPS }, simrounds: S.simrounds });
 function roundBlob(r) {
   const c = courseById(r.courseId), key = c && (MAPS[c.id] ? c.id : mapKeyOf(c));
   return bogeyFile("round", {
@@ -2573,6 +2574,7 @@ async function readBogeyFile(file) {
   if (!Array.isArray(d.players) || !Array.isArray(d.courses) || !Array.isArray(d.rounds)) throw new Error("format");
   const ok = x => x && typeof x.id === "string" && ZIP_OK_ID.test(x.id);
   return { kind: d.kind, exportedAt: d.exportedAt, players: d.players.filter(ok), courses: d.courses.filter(ok), rounds: d.rounds.filter(ok),
+    simrounds: (Array.isArray(d.simrounds) ? d.simrounds : []).filter(r => ok(r) && Array.isArray(r.entries) && Array.isArray(r.course?.pars)),
     maps: Object.entries(d.coursemaps || {}).filter(([k, v]) => ZIP_OK_ID.test(k) && typeof v?.json === "string"), images };
 }
 
@@ -2599,7 +2601,7 @@ function backupHTML() {
   return `<section class="panel" id="backup"><h3>Daten-Backup</h3>
     <p class="hint">Sichert alle Spieler, Plätze, Runden, Platzkarten und Bilder in einer Bogey-Datei (.bogey). Sie lässt sich in jeder Bogey-Club-App öffnen – Mac, Windows, Android, iPhone und Web-App. Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt – gelöscht wird nichts. Ältere Backups (.json) lassen sich weiter einspielen.</p>
     <div class="row"><button class="btn primary" data-act="backup-export">Backup herunterladen</button><label class="btn" for="backup-file">Datei einspielen …</label><input type="file" id="backup-file" accept=".bogey,${BOGEY_MIME},.json,application/json,application/zip,application/octet-stream" hidden></div>
-    <p class="hint">${S.players.length} Spieler · ${S.courses.length} Plätze · ${n} Runde${n === 1 ? "" : "n"} · ${Object.keys(MAPS).length} Platzkarten</p>
+    <p class="hint">${S.players.length} Spieler · ${S.courses.length} Plätze · ${n} Runde${n === 1 ? "" : "n"}${S.simrounds.length ? ` · ${S.simrounds.length} Simulator-Runden` : ""} · ${Object.keys(MAPS).length} Platzkarten</p>
     <div id="backup-status"></div></section>`;
 }
 async function saveOrShare(blob, filename, say, share = false) {
@@ -2632,6 +2634,8 @@ async function exportRoundFile(r) {
 let pendingBackup = null, pendingFile = null;
 async function readBackupFile(file) {
   if (!state.ready) { pendingFile = file; return; }
+  const gs = await looksLikeGspro(file);
+  if (gs) return readGsproFile(file, gs);
   if (state.tab !== "backup") goTab("backup");
   const st = $("#backup-status");
   pendingBackup = null;
@@ -2640,6 +2644,7 @@ async function readBackupFile(file) {
   try {
     const f = await readBogeyFile(file);
     const nImg = Object.keys(f.images).length;
+    if (f.kind === "simulator") { st.innerHTML = ""; return planSharedSim(f); }
     if (f.kind === "round") {
       const plan = planRoundImport(f);
       pendingBackup = { kind: "round", P: plan.newP, C: plan.newC, R: plan.rounds, M: f.maps, images: f.images };
@@ -2652,9 +2657,10 @@ async function readBackupFile(file) {
     } else {
       const pick = (list, coll) => { const have = new Set(S[coll].map(x => x.id)); return { list, neu: list.filter(x => !have.has(x.id)).length }; };
       const P = pick(f.players, "players"), C = pick(f.courses, "courses"), R = pick(f.rounds, "rounds");
-      pendingBackup = { kind: "backup", P: P.list, C: C.list, R: R.list, M: f.maps, images: f.images };
+      const SR = pick(f.simrounds, "simrounds");
+      pendingBackup = { kind: "backup", P: P.list, C: C.list, R: R.list, SR: SR.list, M: f.maps, images: f.images };
       const line = (n, o) => `${o.list.length} ${n} (${o.neu} neu, ${o.list.length - o.neu} überschreiben)`;
-      st.innerHTML = `<p>Backup vom <b>${esc(f.exportedAt ? new Date(f.exportedAt).toLocaleString("de-DE") : "unbekannt")}</b>: ${line("Spieler", P)}, ${line("Plätze", C)}, ${line("Runden", R)}, ${f.maps.length} Platzkarten, ${nImg} Bilder.</p>
+      st.innerHTML = `<p>Backup vom <b>${esc(f.exportedAt ? new Date(f.exportedAt).toLocaleString("de-DE") : "unbekannt")}</b>: ${line("Spieler", P)}, ${line("Plätze", C)}, ${line("Runden", R)}${SR.list.length ? `, ${line("Simulator-Runden", SR)}` : ""}, ${f.maps.length} Platzkarten, ${nImg} Bilder.</p>
         <div class="row"><button class="btn primary" data-act="backup-apply">Jetzt einspielen</button><button class="btn ghost" data-act="backup-cancel">Abbrechen</button></div>`;
     }
   } catch (e) {
@@ -2677,6 +2683,7 @@ async function applyBackup() {
     for (const p of b.P.map(fix)) { await save("players", p); n++; }
     for (const c of b.C.map(fix)) { await save("courses", c); n++; }
     for (const r of b.R) { await save("rounds", r); n++; }
+    for (const r of b.SR || []) { await save("simrounds", r); n++; }
     for (const [k, v] of b.M) {
       if (b.kind === "round" && MAPS[k]) continue;
       if (db) { await db.collection("coursemaps").doc(k).set({ json: v.json, source: "OpenStreetMap", attr: "© OpenStreetMap-Mitwirkende" }); n++; }
@@ -2698,6 +2705,238 @@ window.bogeyOpenFile = (name, data) => {
 (window.__bogeyOpenQueue || []).forEach(([n, d]) => window.bogeyOpenFile(n, d));
 window.__bogeyOpenQueue = { push: ([n, d]) => window.bogeyOpenFile(n, d) };
 
+// ---------- Simulator (GSPro) ----------
+// Simulator-Runden liegen in einer eigenen Collection „simrounds“ und haben ihren Platz eingebettet.
+// Statistik, Handicap, Ranking, Rekorde, Badges, Prognose und Platz-Briefing lesen nur S.rounds – Simulator-Runden zählen dort nie.
+// Lesezeichen für portal.gsprogolf.com (lesbare Fassung: scripts/gspro-bookmarklet.js)
+const GSPRO_BOOKMARKLET = `javascript:(()=>{const d=window.allData;if(!/(^|\\.)gsprogolf\\.com$/.test(location.hostname)||!d||!Array.isArray(d.Rounds_Rounds)){alert("Bogey Club: Bitte zuerst im GSPro Web Portal Analytics → Rounds öffnen und warten, bis die Runden geladen sind.");return}const o=document.querySelector("#playerDD option:checked");const x={format:"gspro-export",version:1,exportedAt:new Date().toISOString(),player:o?o.textContent.trim():"",units:d.Units||null,rounds:d.Rounds_Rounds,scores:d.RoundScores||[],scorecards:d.RoundScorecards||[],strokesGained:d.RoundStrokesGained||[]};const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(x)],{type:"application/json"}));a.download="gspro-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove()})()`;
+const isSimComplete = r => (r.entries || []).length > 0 && r.course?.pars?.length > 0;
+function simResult(e, r) {
+  const pars = r.course.pars, n = pars.length, st = fit(e.strokes, n);
+  let gross = 0, parP = 0, played = 0;
+  st.forEach((s, i) => { if (s > 0) { gross += s; parP += pars[i]; played++; } });
+  return { gross, played, n, complete: played === n, vsPar: gross - parP, strokes: st };
+}
+const simCourse = r => ({ name: r.course.name, pars: r.course.pars, si: r.course.si?.length === r.course.pars.length ? r.course.si : r.course.pars.map((_, i) => i + 1), cr: r.course.cr ?? sum(r.course.pars), slope: r.course.slope ?? 113 });
+// GSPro-Statistik nur, wenn sie zur ganzen Runde gehört (bei fortgesetzten Runden zählt GSPro oft nur den letzten Teil)
+const simStatsOk = (e, res) => !!e.stats && res.complete && (!e.stats.girOf || e.stats.girOf === res.n);
+const simSgOk = (e, res) => !!e.sg && simStatsOk({ stats: e.stats || {} }, res);
+const simYears = () => [...new Set(S.simrounds.map(r => +(r.date || "").slice(0, 4)).filter(Boolean))].sort((a, b) => b - a);
+const simPlayers = () => [...new Set(S.simrounds.flatMap(r => (r.entries || []).map(e => e.playerId)))].filter(id => playerById(id));
+const pct = (a, b) => b ? Math.round(100 * a / b) + " %" : "–";
+const fmtSg = v => v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+// --- GSPro-Datei lesen → geplante Simulator-Runden ---
+function gsproRounds(x) {
+  const H = Array.from({ length: 18 }, (_, i) => String(i + 1));
+  const byRound = {}; (x.scorecards || []).forEach(s => (byRound[s.roundKey] ??= []).push(s));
+  const stats = {}; (x.scores || []).forEach(s => stats[s.roundKeyPlayerKey] = s);
+  const sg = {}; (x.strokesGained || []).forEach(s => sg[s.roundKeyPlayerKey] = s);
+  const unit = x.units?.distanceUoM || "m", out = [];
+  for (const r of x.rounds || []) {
+    if (!r?.roundKey || !ZIP_OK_ID.test("gspro-" + r.roundKey)) continue;
+    const rows = byRound[r.roundKey] || [];
+    const par = rows.find(s => !s.playerKey && s.rowLabel?.trim() === "Par"), idx = rows.find(s => !s.playerKey && s.rowLabel?.trim() === "Index");
+    const tee = rows.find(s => !s.playerKey && s !== par && s !== idx);
+    if (!par) continue;
+    const keys = H.filter(k => +par.holeValue?.[k] > 0), n = keys.length;
+    if (!n) continue;
+    const entries = rows.filter(s => s.playerKey).map(s => {
+      const strokes = keys.map(k => Math.max(0, Math.min(20, parseInt(s.holeValue?.[k], 10) || 0)));
+      const k = r.roundKey + "|" + s.playerKey, a = stats[k], g = sg[k];
+      const e = { mapKey: "g:" + s.playerKey, gsproPlayer: s.playerKey, name: String(s.rowLabel || "").trim() || "Spieler", strokes };
+      if (a) e.stats = { putts: a.puttsValue, fir: a.fairwaysValue, firOf: a.fairwaysTarget, gir: a.greensValue, girOf: a.greensTarget, sand: a.sandSavesValue, sandOf: a.sandSavesTarget, drive: a.drivingDistanceLongest ? Math.round(a.drivingDistanceLongest) : null };
+      if (g) e.sg = { tee: g.tee, app: g.approach, arg: g.around, putt: g.putting, total: g.total };
+      return e;
+    }).filter(e => e.strokes.some(Boolean));
+    if (!entries.length) continue;
+    const begin = new Date(r.roundBegin), ok = !isNaN(begin);
+    const pad = v => String(v).padStart(2, "0");
+    const [cr, slope] = String(r.ratingSlope || "").split("/").map(Number);
+    out.push({
+      id: "gspro-" + r.roundKey, source: "gspro", gsproRound: r.roundKey,
+      date: ok ? `${begin.getFullYear()}-${pad(begin.getMonth() + 1)}-${pad(begin.getDate())}` : String(r.roundBegin || "").slice(0, 10),
+      time: ok ? `${pad(begin.getHours())}:${pad(begin.getMinutes())}` : "",
+      course: { name: String(r.courseName || "Simulator-Platz").trim(), tee: r.teeType || "", cr: cr > 0 ? cr : null, slope: slope > 0 ? slope : null,
+        pars: keys.map(k => +par.holeValue[k]), si: idx ? keys.map(k => +idx.holeValue?.[k] || 0) : [], lengths: tee ? keys.map(k => +tee.holeValue?.[k] || 0) : [], unit },
+      roundType: r.roundType || "", entries
+    });
+  }
+  return out;
+}
+let simPending = null;
+async function looksLikeGspro(file) {
+  try { if (file.size > 30e6) return null; const t = await file.text(); if (!/^\s*\{/.test(t)) return null; const x = JSON.parse(t); return x?.format === "gspro-export" ? x : null; }
+  catch (e) { return null; }
+}
+async function readGsproFile(file, known) {
+  if (state.tab !== "sim") goTab("sim");
+  const x = known || await looksLikeGspro(file);
+  if (!x) { simPending = { error: "Diese Datei ist kein GSPro-Export. Lade sie mit dem Lesezeichen im GSPro Web Portal herunter." }; render(true); return; }
+  if (x.version > 1) { simPending = { error: "Dieser GSPro-Export stammt aus einer neueren Bogey-Club-Version. Bitte zuerst die App aktualisieren." }; render(true); return; }
+  planSimImport(gsproRounds(x), { exportedAt: x.exportedAt, source: "GSPro-Export" });
+}
+// Zuordnung Spieler aus der Datei → Bogey-Spieler: zuletzt benutzte (GSPro), dieselbe ID, sonst gleicher Name
+function planSimImport(rounds, meta) {
+  const map = {};
+  for (const r of S.simrounds) for (const e of r.entries || []) if (e.gsproPlayer && playerById(e.playerId)) map["g:" + e.gsproPlayer] = e.playerId;
+  const names = [];
+  for (const r of rounds) for (const e of r.entries) {
+    let n = names.find(x => x.key === e.mapKey);
+    if (!n) names.push(n = { key: e.mapKey, name: e.name, count: 0, id: e.fromId });
+    n.count++;
+  }
+  names.forEach(n => { if (!(n.key in map)) map[n.key] = (n.id && playerById(n.id) ? n.id : S.players.find(p => normName(p.name) === normName(n.name))?.id) || ""; });
+  names.sort((a, b) => b.count - a.count);
+  simPending = { rounds, names, map, ...meta };
+  render(true);
+}
+// Geteilte Simulator-Runden aus einer Bogey-Datei (kind "simulator"): Spieler über ID oder Namen zuordnen
+function planSharedSim(f) {
+  const pn = Object.fromEntries(f.players.map(p => [p.id, p.name]));
+  const rounds = f.simrounds.filter(r => r.course?.pars?.length).map(r => ({ ...r,
+    entries: (r.entries || []).filter(e => e.playerId).map(e => ({ ...e, mapKey: "p:" + e.playerId, fromId: e.playerId, name: pn[e.playerId] || e.name || "Spieler" })) }));
+  if (state.tab !== "sim") goTab("sim");
+  planSimImport(rounds, { exportedAt: f.exportedAt, source: "Simulator-Datei" });
+}
+async function applyGspro() {
+  const p = simPending; if (!p?.rounds) return;
+  let neu = 0, upd = 0, skipped = 0;
+  for (const r of p.rounds) {
+    const old = S.simrounds.find(x => x.id === r.id);
+    const fresh = r.entries.filter(e => p.map[e.mapKey]).map(e => {
+      const pid = p.map[e.mapKey], prev = old?.entries?.find(y => y.playerId === pid);
+      const { mapKey, fromId, playerId, hcp, ...rest } = e;
+      return { ...rest, playerId: pid, hcp: prev?.hcp ?? (fromId && hcp != null ? hcp : (+playerById(pid)?.hcp || 0)) };
+    }).filter((e, i, a) => a.findIndex(y => y.playerId === e.playerId) === i);
+    if (!fresh.length) { skipped++; continue; }
+    // Vorhandene Spieler der Runde bleiben, neu importierte ersetzen nur ihren eigenen Eintrag
+    const entries = [...(old?.entries || []).filter(y => !fresh.some(e => e.playerId === y.playerId)), ...fresh];
+    await save("simrounds", { ...r, entries, importedAt: Date.now() });
+    old ? upd++ : neu++;
+  }
+  simPending = null;
+  toast(`${neu} Simulator-Runde${neu === 1 ? "" : "n"} neu${upd ? `, ${upd} aktualisiert` : ""}.`);
+  render(true);
+}
+
+// --- Oberfläche ---
+function simImportHTML() {
+  const p = simPending; if (!p) return "";
+  if (p.error) return `<section class="panel"><h3>GSPro-Import</h3><p class="hint">${esc(p.error)}</p><div class="row"><button class="btn ghost" data-act="sim-cancel">Schließen</button></div></section>`;
+  const have = new Set(S.simrounds.map(r => r.id)), neu = p.rounds.filter(r => !have.has(r.id)).length;
+  const opts = sel => `<option value="">– nicht übernehmen –</option>` + S.players.map(x => `<option value="${x.id}" ${x.id === sel ? "selected" : ""}>${esc(x.name)}</option>`).join("");
+  return `<section class="panel"><h3>${esc(p.source || "Import")}${p.exportedAt ? ` vom ${esc(new Date(p.exportedAt).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" }))}` : ""}</h3>
+    <p>${p.rounds.length} Runden mit Schlägen, davon <b>${neu} neu</b>${p.rounds.length - neu ? ` und ${p.rounds.length - neu} schon vorhanden (werden aktualisiert)` : ""}.</p>
+    <p class="hint">Wer ist wer? Nur zugeordnete Spieler werden übernommen. Die Runden landen nur im Simulator – deine echten Runden, Handicaps und Ranglisten bleiben unverändert.</p>
+    <div class="filters">${p.names.map(n => `<label class="f sm">${n.key.startsWith("g:") ? "GSPro " : ""}„${esc(n.name)}“ · ${n.count} Runden<select data-simmap="${esc(n.key)}">${opts(p.map[n.key])}</select></label>`).join("")}</div>
+    <div class="row"><button class="btn primary" data-act="sim-apply" ${Object.values(p.map).some(Boolean) ? "" : "disabled"}>Runden übernehmen</button><button class="btn ghost" data-act="sim-cancel">Abbrechen</button></div></section>`;
+}
+function simSetupHTML(open) {
+  return `<details class="panel scan-more" ${open ? "open" : ""}><summary><h3>GSPro-Runden holen</h3></summary>
+    <ol>
+      <li>Diesen Knopf in die Lesezeichenleiste ziehen: <a class="btn" href="${esc(GSPRO_BOOKMARKLET)}" onclick="return false" title="In die Lesezeichenleiste ziehen">GSPro → Bogey Club</a>
+        <br><span class="hint">Klappt das Ziehen nicht: <button class="btn ghost" data-act="sim-copy-bm">Code kopieren</button>, ein neues Lesezeichen anlegen und den Code als Adresse einfügen.</span></li>
+      <li>Im Browser <b>portal.gsprogolf.com</b> öffnen, anmelden und <b>Analytics → Rounds</b> wählen.</li>
+      <li>Warten, bis die Runden geladen sind, dann das Lesezeichen anklicken. Es lädt eine Datei <b>gspro-Datum.json</b> herunter.</li>
+      <li>Hier <b>Datei einspielen</b> und die Spieler zuordnen. Bereits übernommene Runden werden erkannt und nur aktualisiert.</li>
+    </ol>
+    <p class="hint"><b>Teilen:</b> „Exportieren“ speichert alle Simulator-Runden als Bogey-Datei. Andere spielen sie unter Statistik → Simulator → Datei einspielen ein und ordnen die Spieler zu – auch dort zählen sie nur im Simulator.</p>
+    <p class="hint">Das Lesezeichen liest nur, was die GSPro-Seite schon anzeigt, und speichert es als Datei auf deinem Gerät. Für die Statistik eines anderen GSPro-Spielers (Putts, Fairways, Strokes Gained) ihn oben auf der GSPro-Seite auswählen und erneut exportieren.</p>
+  </details>`;
+}
+function simHTML() {
+  if (state.simView && S.simrounds.some(r => r.id === state.simView)) return simRoundHTML();
+  const head = `<div class="row"><h2>Simulator</h2><span class="spacer"></span>${S.simrounds.length ? `<button class="btn" data-act="sim-export">Exportieren</button>` : ""}<label class="btn primary" for="sim-file">Datei einspielen …</label><input type="file" id="sim-file" accept=".json,application/json,.bogey,${BOGEY_MIME}" hidden></div>
+    <p class="hint">Runden aus GSPro. Sie zählen nicht in Statistik, Handicap, Ranking, Rekorden, Badges und Prognose.</p>`;
+  if (!S.simrounds.length) return head + simImportHTML() + `<div class="panel empty"><h3>Noch keine Simulator-Runden</h3><p class="hint">Hole deine Runden aus dem GSPro Web Portal – einmal einrichten, danach reicht ein Klick.</p></div>` + simSetupHTML(true);
+  const players = simPlayers();
+  const pid = players.includes(state.simPlayer) ? state.simPlayer : players[0];
+  const years = simYears(), year = state.simYear === "all" || years.includes(state.simYear) ? state.simYear : (years[0] ?? "all");
+  const rounds = S.simrounds.filter(r => inYear(r.date, year) && (r.entries || []).some(e => e.playerId === pid))
+    .sort((a, b) => (b.date + (b.time || "")).localeCompare(a.date + (a.time || "")));
+  const rows = rounds.map(r => { const e = r.entries.find(x => x.playerId === pid); return { r, e, res: simResult(e, r) }; });
+  const full = rows.filter(x => x.res.complete && x.res.n === 18);
+  const withStats = full.filter(x => simStatsOk(x.e, x.res)), withSg = full.filter(x => simSgOk(x.e, x.res));
+  const tot = k => sum(withStats.map(x => +x.e.stats[k] || 0));
+  const best = full.length ? full.reduce((a, b) => b.res.gross < a.res.gross ? b : a) : null;
+  const drive = Math.max(0, ...rows.map(x => +x.e.stats?.drive || 0));
+  const unit = rows.find(x => x.r.course.unit)?.r.course.unit || "m";
+  const sgAvg = k => withSg.length ? avg(withSg.map(x => +x.e.sg[k] || 0)) : null;
+  let h = head + simImportHTML();
+  h += `<div class="filters">
+    <label class="f sm">Spieler<select id="sim-player">${players.map(id => `<option value="${id}" ${id === pid ? "selected" : ""}>${esc(pName(id))}</option>`).join("")}</select></label>
+    <label class="f sm">Jahr<select id="sim-year"><option value="all" ${year === "all" ? "selected" : ""}>Alle Jahre</option>${years.map(y => `<option value="${y}" ${y === year ? "selected" : ""}>${y}</option>`).join("")}</select></label></div>`;
+  h += `<section class="panel"><div class="row">${who(pid, 44)}<span class="hint">${yearLabel(year)} · Simulator</span></div><div class="kpis">
+    <div class="kpi"><b>${full.length}</b><span>Runden (18 L.)</span></div>
+    <div class="kpi"><b>${fmt1(avg(full.map(x => x.res.gross)))}</b><span>Ø Brutto</span></div>
+    <div class="kpi"><b>${best ? best.res.gross : "–"}</b><span>Beste Brutto${best ? ` · ${esc(best.r.course.name)}` : ""}</span></div>
+    <div class="kpi"><b>${fmtVs(full.length ? avg(full.map(x => x.res.vsPar)) : null)}</b><span>Ø über Par</span></div>
+    <div class="kpi"><b>${withStats.length ? fmt1(tot("putts") / withStats.length) : "–"}</b><span>Ø Putts</span></div>
+    <div class="kpi"><b>${withStats.length ? pct(tot("fir"), tot("firOf")) : "–"}</b><span>Fairways getroffen</span></div>
+    <div class="kpi"><b>${withStats.length ? pct(tot("gir"), tot("girOf")) : "–"}</b><span>Grüns in Regulation</span></div>
+    <div class="kpi"><b>${withStats.length && tot("sandOf") ? pct(tot("sand"), tot("sandOf")) : "–"}</b><span>Sand Saves</span></div>
+    <div class="kpi"><b>${drive ? drive + " " + esc(unit) : "–"}</b><span>Längster Drive</span></div>
+  </div></section>`;
+  if (withSg.length) h += `<section class="panel"><h3>Strokes Gained · Ø je Runde</h3><div class="kpis">
+    <div class="kpi"><b>${fmtSg(sgAvg("tee"))}</b><span>Abschlag</span></div>
+    <div class="kpi"><b>${fmtSg(sgAvg("app"))}</b><span>Annäherung</span></div>
+    <div class="kpi"><b>${fmtSg(sgAvg("arg"))}</b><span>Kurzes Spiel</span></div>
+    <div class="kpi"><b>${fmtSg(sgAvg("putt"))}</b><span>Putten</span></div>
+    <div class="kpi"><b>${fmtSg(sgAvg("total"))}</b><span>Gesamt</span></div></div>
+    <p class="hint">Wie von GSPro berechnet (Vergleich mit einem Scratch-Golfer). Negativ heißt: Schläge verloren.</p></section>`;
+  h += `<section class="panel"><h3>Runden</h3>${rows.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Datum</th><th>Platz</th><th>Brutto</th><th>± Par</th><th>Putts</th><th>Fairways</th><th>Grüns</th><th>SG</th></tr></thead><tbody>
+    ${rows.map(({ r, e, res }) => `<tr class="click" data-act="sim-open" data-id="${esc(r.id)}"><td>${fmtDate(r.date)}</td><td>${esc(r.course.name)}${r.course.tee ? ` <span class="hint">${esc(r.course.tee)}</span>` : ""}</td>
+      <td>${res.complete ? res.gross : `<span class="hint">${res.played}/${res.n} L.</span>`}</td><td>${res.complete ? fmtVs(res.vsPar) : ""}</td>
+      <td>${simStatsOk(e, res) ? e.stats.putts : ""}</td><td>${simStatsOk(e, res) && e.stats.firOf ? `${e.stats.fir}/${e.stats.firOf}` : ""}</td><td>${simStatsOk(e, res) && e.stats.girOf ? `${e.stats.gir}/${e.stats.girOf}` : ""}</td><td>${simSgOk(e, res) ? fmtSg(e.sg.total) : ""}</td></tr>`).join("")}
+    </tbody></table></div>` : `<p class="hint">Keine Simulator-Runden für diese Auswahl.</p>`}
+    <p class="hint">Durchschnitte nur aus vollständigen 18-Loch-Runden. Abgebrochene Runden zeigen die gespielten Löcher. Putts, Fairways, Grüns und Strokes Gained nur, wenn GSPro sie für die ganze Runde liefert (bei fortgesetzten Runden fehlen sie).</p></section>`;
+  return h + simSetupHTML(false);
+}
+function simRoundHTML() {
+  const r = S.simrounds.find(x => x.id === state.simView), c = simCourse(r);
+  const d = new Date(r.date + "T12:00:00");
+  const entries = (r.entries || []).map(e => ({ ...e, playerId: playerById(e.playerId) ? e.playerId : e.playerId }));
+  const stat = (e, res) => {
+    const s = e.stats, g = e.sg, cells = [];
+    if (simStatsOk(e, res)) cells.push(["Putts", s.putts], ["Fairways", s.firOf ? `${s.fir}/${s.firOf}` : "–"], ["Grüns", s.girOf ? `${s.gir}/${s.girOf}` : "–"], ["Sand Saves", s.sandOf ? `${s.sand}/${s.sandOf}` : "–"], ["Längster Drive", s.drive ? `${s.drive} ${esc(r.course.unit || "m")}` : "–"]);
+    if (simSgOk(e, res)) cells.push(["SG Abschlag", fmtSg(g.tee)], ["SG Annäherung", fmtSg(g.app)], ["SG Kurzes Spiel", fmtSg(g.arg)], ["SG Putten", fmtSg(g.putt)], ["SG Gesamt", fmtSg(g.total)]);
+    return cells.map(([l, v]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
+  };
+  const cards = entries.map(e => {
+    const res = simResult(e, r);
+    return `<section class="panel"><div class="row">${who(e.playerId, 40)}<span class="hint">GSPro: ${esc(e.name)}</span><span class="spacer"></span>
+      <b>${res.complete ? `${res.gross} (${fmtVs(res.vsPar)})` : `${res.played} von ${res.n} Löchern`}</b></div>
+      ${stat(e, res) ? `<div class="kpis">${stat(e, res)}</div>` : ""}</section>`;
+  }).join("");
+  return `<div class="row"><button class="btn ghost" data-act="sim-close">← Simulator</button><span class="spacer"></span><button class="btn danger" data-act="sim-del">Runde löschen</button></div>
+    <section class="panel round-head"><div><h2>${esc(r.course.name)}</h2>
+      <p class="hint">Simulator (GSPro) · ${d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}${r.time ? `, ${esc(r.time)} Uhr` : ""} · ${c.pars.length} Loch · Par ${sum(c.pars)}${r.course.tee ? ` · Abschlag ${esc(r.course.tee)}` : ""}${r.course.cr ? ` · CR ${fmt1(+r.course.cr)} · Slope ${r.course.slope}` : ""}</p></div></section>
+    ${cards}
+    <section class="panel"><h3>Scorekarte</h3><div class="card-wrap">${cardTable({ entries: JSON.parse(JSON.stringify(entries)) }, c, true)}</div>
+      <p class="hint">Stableford-Punkte mit dem HCP-Index, den der Spieler beim Import in Bogey Club hatte. Zählt nirgends mit.</p></section>`;
+}
+
+// --- Simulator-Runden teilen: Bogey-Datei mit kind "simulator" (Spieler zum Zuordnen, keine Plätze, keine normalen Runden) ---
+async function exportSim() {
+  const say = t => toast(t);
+  try {
+    const ids = new Set(S.simrounds.flatMap(r => (r.entries || []).map(e => e.playerId)));
+    const players = S.players.filter(p => ids.has(p.id)).map(({ id, name }) => ({ id, name }));
+    await saveOrShare(await bogeyFile("simulator", { players, courses: [], rounds: [], maps: {}, simrounds: S.simrounds }), `Bogey-Club-Simulator-${today()}${BOGEY_EXT}`, say, true);
+  } catch (e) { say("Die Datei konnte nicht erstellt werden."); }
+}
+async function readSimFile(file) {
+  const g = await looksLikeGspro(file);
+  if (g) return readGsproFile(file, g);
+  try {
+    const f = await readBogeyFile(file);
+    if (f.simrounds.length && (f.kind === "simulator" || !f.rounds.length)) return planSharedSim(f);
+    simPending = { error: f.simrounds.length ? "Das ist ein vollständiges Backup – bitte unter Mehr → Backup einspielen." : "In dieser Datei sind keine Simulator-Runden." };
+  } catch (e) { simPending = { error: e?.message === "newer" ? "Diese Datei stammt aus einer neueren Bogey-Club-Version. Bitte zuerst die App aktualisieren." : "Diese Datei ist weder ein GSPro-Export noch eine Bogey-Datei mit Simulator-Runden." }; }
+  if (state.tab !== "sim") goTab("sim"); else render(true);
+}
+
 // ---------- Ereignisse ----------
 const confirmArm = {};
 function armed(key, btn, label) {
@@ -2718,6 +2957,13 @@ $("#main").addEventListener("click", async e => {
     case "open-round-stats": state.tab = "rounds"; openRound(id); break;
     case "close-editor": state.view = state.editor?.id && S.rounds.some(r => r.id === state.editor.id) ? state.editor.id : null; state.editor = null; state.scan = null; render(true); break;
     case "close-view": state.view = null; render(true); break;
+    case "sim-open": state.simView = id; render(true); window.scrollTo(0, 0); break;
+    case "sim-close": state.simView = null; render(true); break;
+    case "sim-del": if (armed("simdel", b, "Wirklich löschen?")) { await removeDoc("simrounds", state.simView); state.simView = null; toast("Simulator-Runde gelöscht"); render(true); } break;
+    case "sim-apply": b.disabled = true; await applyGspro(); break;
+    case "sim-cancel": simPending = null; render(true); break;
+    case "sim-export": exportSim(); break;
+    case "sim-copy-bm": try { await navigator.clipboard.writeText(GSPRO_BOOKMARKLET); toast("Lesezeichen-Code kopiert"); } catch (err) { toast("Kopieren ist hier nicht möglich."); } break;
     case "edit-round": { const r = S.rounds.find(x => x.id === state.view); if (r) { state.editor = JSON.parse(JSON.stringify(r)); state.scan = null; render(true); window.scrollTo(0, 0); } break; }
     case "share-toggle": { const m = $("#share-menu"); if (m) { m.hidden = !m.hidden; b.setAttribute("aria-expanded", String(!m.hidden)); } break; }
     case "list-reset": state.listPlayer = ""; state.listCourse = ""; render(true); break;
@@ -2834,6 +3080,10 @@ $("#main").addEventListener("change", e => {
   else if (t.id === "year") { state.year = t.value === "all" ? "all" : +t.value; state.statsPlayer = null; render(true); }
   else if (t.id === "co-photo-file" && t.files?.[0]) uploadCoursePhoto(t.files[0]);
   else if (t.id === "backup-file" && t.files?.[0]) { readBackupFile(t.files[0]); t.value = ""; }
+  else if (t.id === "sim-file" && t.files?.[0]) { readSimFile(t.files[0]); t.value = ""; }
+  else if (t.id === "sim-player") { state.simPlayer = t.value; render(true); }
+  else if (t.id === "sim-year") { state.simYear = t.value === "all" ? "all" : +t.value; render(true); }
+  else if (t.dataset.simmap != null && simPending?.map) { simPending.map[t.dataset.simmap] = t.value; render(true); }
   else if ((t.id === "pl-photo-file" || t.id === "pl-photo-cam") && t.files?.[0]) uploadPlayerPhoto(t.files[0]);
   else if ((t.id === "scan-file" || t.id === "scan-camera" || t.id === "scan-pdf") && t.files?.[0]) runScan(t.files[0]);
 });

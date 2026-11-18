@@ -1,7 +1,7 @@
 // Bogey Club – Service Worker der Web-App (GitHub Pages).
 // 1. Liefert Bilder unter …/_blob/<id> aus dem Browser-Speicher (IndexedDB „bogeyclub“, siehe runtime.js).
 // 2. Hält die App-Dateien vor, damit die Web-App auch ohne Internet startet (online immer die neueste Fassung).
-const CACHE = "bogeyclub-3582af817a8b";
+const CACHE = "bogeyclub-af31181345f2";
 const SHELL = ["./","bogey-club-logo.png","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","lib/fonts/BarlowCondensed-500-latin-ext.woff2","lib/fonts/BarlowCondensed-500-latin.woff2","lib/fonts/BarlowCondensed-600-latin-ext.woff2","lib/fonts/BarlowCondensed-600-latin.woff2","lib/fonts/BarlowCondensed-700-latin-ext.woff2","lib/fonts/BarlowCondensed-700-latin.woff2","lib/fonts/PublicSans-400-latin-ext.woff2","lib/fonts/PublicSans-400-latin.woff2","lib/fonts/PublicSans-500-latin-ext.woff2","lib/fonts/PublicSans-500-latin.woff2","lib/fonts/PublicSans-600-latin-ext.woff2","lib/fonts/PublicSans-600-latin.woff2","lib/fonts/fonts.css","lib/jspdf.plugin.autotable.min.js","lib/jspdf.umd.min.js","lib/pdfjs/pdf.min.js","lib/pdfjs/pdf.worker.min.js","manifest.webmanifest","ocr.js","runtime.js"];
 
 self.addEventListener("install", e => {
