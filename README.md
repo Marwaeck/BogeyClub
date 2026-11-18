@@ -41,6 +41,15 @@ Die Karte wird in der Web-App in der Datenbank-Collection `coursemaps` gespeiche
 
 Runden, Spieler und Plätze liegen nicht im Repo. Sicherung in jeder App über **Spieler → Daten-Backup** (iPhone: **Mehr → Daten-Backup**).
 
+## Simulator (GSPro)
+
+Runden aus dem Golfsimulator GSPro liegen getrennt von den echten Runden in der Collection `simrounds` und zählen nirgends mit (Statistik, Handicap, Ranking, Rekorde, Badges, Prognose, Briefing lesen nur `rounds`). Anzeige unter **Statistik → Simulator**.
+
+- **Holen:** Lesezeichen „GSPro → Bogey Club“ (Code in `web/index.html` als `GSPRO_BOOKMARKLET`, lesbar in `scripts/gspro-bookmarklet.js`) auf portal.gsprogolf.com → Analytics → Rounds. Es speichert `window.allData` als `gspro-JJJJ-MM-TT.json` (`format: "gspro-export"`).
+- **Einspielen:** Simulator → Datei einspielen (oder über Backup / Datei öffnen – GSPro-Exporte werden erkannt). GSPro-Spieler werden Bogey-Spielern zugeordnet; die Zuordnung wird gemerkt. Dokument-ID `gspro-<roundKey>`, gleiche Runden werden nur aktualisiert.
+- **Dokument:** `{ source: "gspro", date, time, course: { name, tee, cr, slope, pars, si, lengths, unit }, entries: [{ playerId, name, gsproPlayer, hcp, strokes, stats?, sg? }] }` – der Platz ist eingebettet, damit keine Simulator-Plätze in der Platzliste landen.
+- **Teilen:** Simulator → Exportieren erzeugt eine Bogey-Datei mit `kind: "simulator"` (nur Spieler-ID und Name, Simulator-Runden). Beim Empfänger werden Spieler über ID oder Namen zugeordnet; vorhandene Einträge anderer Spieler in derselben Runde bleiben erhalten.
+
 ## Dateiformat .bogey
 
 Backups und geteilte Runden sind Bogey-Dateien (`.bogey`, MIME-Typ `application/vnd.bogeyclub`, Typ-ID `club.bogey.file`). Alle Apps melden die Endung beim System an: Doppelklick bzw. Antippen (Dateien, Mail, WhatsApp, „Teilen an Bogey Club“ auf Android) öffnet Bogey Club mit einer Vorschau vor dem Einspielen.
@@ -50,7 +59,7 @@ Aufbau – ein ZIP-Container:
 | Eintrag | Inhalt |
 |---|---|
 | `mimetype` | `application/vnd.bogeyclub`, unkomprimiert, als erster Eintrag |
-| `bogey.json` | `{ format: "bogey", version: 1, kind: "backup" \| "round", app, exportedAt, players, courses, rounds, coursemaps }` – dieselben Dokumente wie in der Datenbank der Web-App, Platzkarten als Objekt je Kartenschlüssel |
+| `bogey.json` | `{ format: "bogey", version: 1, kind: "backup" \| "round" \| "simulator", app, exportedAt, players, courses, rounds, coursemaps, simrounds? }` – dieselben Dokumente wie in der Datenbank der Web-App, Platzkarten als Objekt je Kartenschlüssel |
 | `images/<id>.jpg` | Spieler- und Luftbilder (ID wie im Feld `photo`) |
 
 - **`kind: "backup"`** – alles. Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt, gelöscht wird nichts.
