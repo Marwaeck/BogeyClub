@@ -3,7 +3,7 @@ layout: home
 title: Bogey Club – privates Golf-Scorebuch
 intro: >-
   Scorekarten fotografieren, mehrere Spieler über viele Runden verfolgen und daraus Jahresstatistik,
-  Ranking, Badges und Platz-Briefings machen – im Browser, auf dem iPhone, dem Mac, unter Windows und auf Android.
+  Ranking, Badges und Platz-Briefings machen – im Browser, auf dem Mac, unter Windows und auf Android.
 screenshot: /assets/img/screenshot.png
 screenshot_alt: Die Statistik einer Saison in der Mac-App
 ---

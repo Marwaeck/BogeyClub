@@ -97,15 +97,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  ios:
-    name: iPhone-App (Build-Prüfung)
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v4
-      - name: Für den Simulator bauen (ohne Signatur)
-        working-directory: ios/GolfScorebuch
-        run: xcodebuild -project GolfScorebuch.xcodeproj -scheme GolfScorebuch -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet build
-
   android:
     name: Android-App
     runs-on: ubuntu-latest

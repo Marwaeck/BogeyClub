@@ -2609,7 +2609,7 @@ function planRoundImport(f) {
 function backupHTML() {
   const n = S.rounds.length;
   return `<section class="panel" id="backup"><h3>Daten-Backup</h3>
-    <p class="hint">Sichert alle Spieler, Plätze, Runden, Platzkarten und Bilder in einer Bogey-Datei (.bogey). Sie lässt sich in jeder Bogey-Club-App öffnen – Mac, Windows, Android, iPhone und Web-App. Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt – gelöscht wird nichts. Ältere Backups (.json) lassen sich weiter einspielen.</p>
+    <p class="hint">Sichert alle Spieler, Plätze, Runden, Platzkarten und Bilder in einer Bogey-Datei (.bogey). Sie lässt sich in jeder Bogey-Club-App öffnen – Mac, Windows, Android und Web-App. Beim Einspielen werden Einträge mit gleicher ID überschrieben und neue ergänzt – gelöscht wird nichts. Ältere Backups (.json) lassen sich weiter einspielen.</p>
     <div class="row"><button class="btn primary" data-act="backup-export">Backup herunterladen</button><label class="btn" for="backup-file">Datei einspielen …</label><input type="file" id="backup-file" accept=".bogey,${BOGEY_MIME},.json,application/json,application/zip,application/octet-stream" hidden></div>
     <p class="hint">${S.players.length} Spieler · ${S.courses.length} Plätze · ${n} Runde${n === 1 ? "" : "n"}${S.simrounds.length ? ` · ${S.simrounds.length} Simulator-Runden` : ""} · ${Object.keys(MAPS).length} Platzkarten</p>
     <div id="backup-status"></div></section>`;
